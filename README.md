@@ -1,13 +1,37 @@
-<h1>CRYPTONATE - SERVER</h1>
+# Cryptonate Server
 
-<h3>Commands</h3>
-1. Install Application - npm install</br>
-2. Start the Application - npm start
+## Commands
 
-<h3>Technology</h3>
-1. NPM</br>
-2. NODE</br>
-3. TYPESCRIPT (CAN WRITE JS ON IT)</br>
-4. EXPRESS</br>
-5. MONGODB</br>
-6. SWAGGER API - Documenting the API</br>
+```bash
+# Install Application
+npm install
+
+# Start application
+npm start
+```
+
+## Technologies
+
+- NPM
+- NODE
+- TYPESCRIPT (CAN WRITE JS ON IT)
+- EXPRESS
+- MONGODB
+- SWAGGER API - Documenting the API
+
+## Folder Structure
+
+- controller
+    - (controller / service) contains main logic for each routes
+- db
+    - mongoose models
+- middleware
+    - auth middlewares
+- routes
+    - userRoute, organizationRoute, etc
+- test
+    - Jest unit test
+- util
+    - utility functions
+- app.ts
+    - starting point
