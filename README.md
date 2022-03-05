@@ -1,4 +1,4 @@
-# Cryptonate Server
+# Cryptonate Server [v1]
 
 ## Commands
 
@@ -8,6 +8,12 @@ npm install
 
 # Start application
 npm start
+
+# docker compose mongodb
+docker compose up -d
+
+# docker-compose for older version
+docker-compose up -d
 ```
 
 ## Technologies
@@ -17,21 +23,27 @@ npm start
 - TYPESCRIPT (CAN WRITE JS ON IT)
 - EXPRESS
 - MONGODB
-- SWAGGER API - Documenting the API
+- POSTMAN - Documenting the API
+- DOCKER (Optional) - run mongodb without installing local version
 
 ## Folder Structure
 
 - controller
-    - (controller / service) contains main logic for each routes
+  - (controller / service) contains main logic for each routes
 - db
-    - mongoose models
+  - mongoose models
 - middleware
-    - auth middlewares
+  - auth middlewares
 - routes
-    - userRoute, organizationRoute, etc
+  - userRoute, organizationRoute, etc
 - test
-    - Jest unit test
+  - Jest unit test
 - util
-    - utility functions
+  - utility functions
 - app.ts
-    - starting point
+  - starting point
+
+## Note
+
+- All routes will start with /api/[version]
+- During dev, setup cors to localhost:3000

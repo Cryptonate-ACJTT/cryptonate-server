@@ -22,11 +22,29 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SampleRouter = void 0;
-const express_1 = require("express");
-const SampleController = __importStar(require("../controller/sampleController"));
-const router = (0, express_1.Router)();
-exports.SampleRouter = router;
-router.get("/:username", SampleController.sampleGet);
-router.post("/", SampleController.samplePost);
+const express_1 = __importStar(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+// ROUTE IMPORTS
+const sampleRoute_1 = require("../routes/sampleRoute");
+function createServer() {
+    // INIT CONFIG - port numbers and etc...
+    const app = (0, express_1.default)();
+    // INIT SETUP
+    app.use(express_1.default.json());
+    app.use((0, express_1.urlencoded)({ extended: true }));
+    app.use((0, cookie_parser_1.default)());
+    app.use((0, cors_1.default)({
+        origin: ["http://localhost:3000"],
+        credentials: true,
+    }));
+    // ROUTES
+    app.use("/api/v1/sample", sampleRoute_1.SampleRouter);
+    // RETURN THE APP TO BE USED FOR TESTING AND app.ts
+    return app;
+}
+exports.default = createServer;

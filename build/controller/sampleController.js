@@ -12,8 +12,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.samplePost = exports.sampleGet = void 0;
 const SampleUser_1 = require("../models/SampleUser");
 function sampleGet(req, res) {
-    console.log("Sample Route");
-    res.json({ "This": "This", "Is": "Is", "Sample": "Sample" });
+    return __awaiter(this, void 0, void 0, function* () {
+        const { username } = req.params;
+        if (!username)
+            return res.status(404).json({ status: "ERROR", msg: "username not found" });
+        const user = yield SampleUser_1.UserModel.findOne({ username: username });
+        console.log(user);
+        if (!user)
+            return res
+                .status(404)
+                .json({ status: "ERROR", msg: `User not found by the id: ${username}` });
+        res.status(200).json({ user });
+    });
 }
 exports.sampleGet = sampleGet;
 function samplePost(req, res) {
@@ -22,10 +32,10 @@ function samplePost(req, res) {
         const user = new SampleUser_1.UserModel({
             username: requestUser.username,
             password: requestUser.password,
-            email: requestUser.email
+            email: requestUser.email,
         });
         yield user.save();
-        res.json({ status: "OK" });
+        res.json({ status: "OK", id: user._id });
     });
 }
 exports.samplePost = samplePost;
