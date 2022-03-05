@@ -1,11 +1,11 @@
-import {Request, Response} from 'express'
-import { Router } from 'express'
-import * as SampleController from '../controller/sampleController'
+import { Request, Response } from "express";
+import { Router } from "express";
+import * as SampleController from "../controller/sampleController";
 
-const router = Router()
+const router = Router();
 
-router.get('/', SampleController.sampleGet)
+router.get("/:username", SampleController.sampleGet);
 
-router.post('/', SampleController.samplePost);
+router.post("/", SampleController.samplePost);
 
-export {router as SampleRouter}
+export { router as SampleRouter };

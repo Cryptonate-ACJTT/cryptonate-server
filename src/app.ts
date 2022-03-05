@@ -1,24 +1,13 @@
-import express, {Express, Request, Response } from "express";
-import {connection} from './db/dbconfig'
+import { connection } from "./db/dbconfig";
+import createServer from "./util/server";
 
-// ROUTE IMPORTS
-import {SampleRouter} from './routes/sampleRoute'
+const app = createServer();
+const PORT: number = 4000; // Type assert to string
 
-// INIT CONFIG - port numbers and etc...
-const app: Express = express();
-const PORT = 4000 // Type assert to string 
-
+// DB SETUP
 const db = connection;
-db.on('error', console.error.bind(console, 'MONGODB CONNECTION ERROR'))
-
-app.use(express.json());
-
-// USING DEFINED ROUTES
-app.use('/api/v1/sample', SampleRouter)
-
-
+db.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));
 
 app.listen(PORT, () => {
   console.log("CONNECTED ON PORT: ", PORT);
 });
-
