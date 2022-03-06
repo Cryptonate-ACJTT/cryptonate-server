@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 
 // ROUTE IMPORTS
 import { SampleRouter } from "../routes/sampleRoute";
+import { UserRouter } from "../routes/userRoute";
 
 function createServer() {
   // INIT CONFIG - port numbers and etc...
@@ -22,6 +23,7 @@ function createServer() {
 
   // ROUTES
   app.use("/api/v1/sample", SampleRouter);
+  app.use("/api/v1/user", UserRouter);
 
   // RETURN THE APP TO BE USED FOR TESTING AND app.ts
   return app;

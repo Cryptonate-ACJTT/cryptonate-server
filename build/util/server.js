@@ -31,6 +31,7 @@ const cors_1 = __importDefault(require("cors"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 // ROUTE IMPORTS
 const sampleRoute_1 = require("../routes/sampleRoute");
+const userRoute_1 = require("../routes/userRoute");
 function createServer() {
     // INIT CONFIG - port numbers and etc...
     const app = (0, express_1.default)();
@@ -44,6 +45,7 @@ function createServer() {
     }));
     // ROUTES
     app.use("/api/v1/sample", sampleRoute_1.SampleRouter);
+    app.use("/api/v1/user", userRoute_1.UserRouter);
     // RETURN THE APP TO BE USED FOR TESTING AND app.ts
     return app;
 }

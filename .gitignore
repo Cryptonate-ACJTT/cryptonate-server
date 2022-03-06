@@ -132,3 +132,7 @@ dist
 # webstorm
 .idea
 .idea*
+
+# ignore js files
+build
+build/*.js
