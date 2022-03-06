@@ -24,16 +24,4 @@ describe("GET /sample", () => {
             yield (0, supertest_1.default)(server).get("/api/v1/sample").expect(404);
         }));
     });
-    //   describe("given the user id exists and user exists in db", () => {
-    //     it("should return a user with 200", async () => {
-    //       await supertest(server)
-    //         .get("/api/v1/sample")
-    //         .expect("Content-Type", /json/)
-    //         .expect(200)
-    // 		.end((err, res) => {
-    // 			if(err) return done(err)
-    // 			expect(res.body).toMatchObject({""})
-    // 		})
-    //     });
-    //   });
 });
