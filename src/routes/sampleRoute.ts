@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import { Router } from "express";
 import * as SampleController from "../controller/sampleController";
 

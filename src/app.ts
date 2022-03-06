@@ -2,7 +2,7 @@ import { connection } from "./db/dbconfig";
 import createServer from "./util/server";
 
 const app = createServer();
-const PORT: number = 4000; // Type assert to string
+const PORT = 4000; // Type assert to string
 
 // DB SETUP
 const db = connection;

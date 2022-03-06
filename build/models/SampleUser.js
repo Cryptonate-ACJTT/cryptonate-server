@@ -7,7 +7,7 @@ const UserSchema = new mongoose_1.Schema({
     password: { type: String, required: true },
     email: { type: String, required: true },
 }, {
-    timestamps: true
+    timestamps: true,
 });
-const UserModel = (0, mongoose_1.model)('User', UserSchema);
+const UserModel = (0, mongoose_1.model)("User", UserSchema);
 exports.UserModel = UserModel;
