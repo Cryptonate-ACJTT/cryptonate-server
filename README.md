@@ -52,7 +52,7 @@ npm run dev
 - test
   - Jest unit test
 - util
-  - utility functions
+  - env.ts (Temporarly using it as .env file)
   - server.ts (refactored app.ts for testing)
 - app.ts
 

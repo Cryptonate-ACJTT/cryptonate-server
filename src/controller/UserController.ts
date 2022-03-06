@@ -5,6 +5,7 @@ import * as auth from "../middleware/auth";
 import bcrypt from "bcryptjs";
 import User from "../models/User";
 import ROLE from "../models/Role";
+import { UserModel } from "../models/SampleUser";
 
 /**
  * User Registration and assign JWT token
@@ -17,6 +18,18 @@ async function addUser(req: Request, res: Response) {
 
   if (!username || !password || !email || !role)
     return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
+
+  // CHECK IF USER ALREADY EXISTS BY THE email
+  const existingUser =
+    role === ROLE.DONOR
+      ? await donorModel.findOne({ email })
+      : await organizationModel.findOne({ email });
+
+  if (existingUser)
+    return res.status(400).json({
+      status: "ERROR",
+      msg: `User already exists by the email: ${email}`,
+    });
 
   const saltRounds = 10;
   const salt = await bcrypt.genSalt(saltRounds);
@@ -46,6 +59,7 @@ async function addUser(req: Request, res: Response) {
   // LOGIN THE USER
   const token = auth.signToken(user);
 
+  // RETURN USER WITH PARTIAL DATA
   await res
     .cookie("token", token, {
       httpOnly: true,
