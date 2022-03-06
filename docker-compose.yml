@@ -9,7 +9,22 @@ services:
     #      - MONGO_INITDB_ROOT_PASSWORD=password
     container_name: mongodb-cryptonate
     volumes:
-      - mongo-data:/data/db
-volumes:
-  mongo-data:
-    driver: local
+      - ~/mongo:/data/db
+    networks:
+      - mongo-compose-network
+  cryptonate:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./:/app # telling to reference current local directory : container directory app (which was copied when image was created)
+      - /app/node_modules
+    networks:
+      - mongo-compose-network
+    depends_on:
+      - mongodb
+    links:
+      - mongodb
+networks:
+  mongo-compose-network:
+    driver: bridge
