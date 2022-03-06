@@ -13,5 +13,6 @@ import * as UserController from "../controller/UserController";
 const router = Router();
 
 router.post("/", UserController.addUser);
+router.post("/login", UserController.login);
 
 export { router as UserRouter };
