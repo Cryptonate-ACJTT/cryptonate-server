@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { donorModel } from "../models/Donor";
-import { organizationModel } from "../models/Organization";
+import { donorModel } from "../models/DonorModel";
+import { organizationModel } from "../models/OrganizationModel";
 import * as auth from "../middleware/auth";
 import bcrypt from "bcryptjs";
-import User from "../models/User";
+import User from "../models/interface/User";
 import ROLE from "../models/Role";
-import { adminModel } from "../models/Admin";
+import { adminModel } from "../models/AdminModel";
 
 /**
  * User Registration and assign JWT token
@@ -141,4 +141,23 @@ async function login(req: Request, res: Response) {
   });
 }
 
-export { addUser, login };
+function logout(req: Request, res: Response) {
+  try {
+    res
+      .cookie("token", "", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      })
+      .status(200)
+      .json({
+        success: true,
+      })
+      .send();
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send();
+  }
+}
+
+export { addUser, login, logout };

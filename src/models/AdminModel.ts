@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
-import User from "./User";
+import User from "./interface/User";
 
-const DonorSchema: Schema = new Schema<User>(
+const AdminSchema: Schema = new Schema<User>(
   {
     username: { type: String, require: true },
     password: { type: String, required: true },
@@ -13,5 +13,5 @@ const DonorSchema: Schema = new Schema<User>(
   }
 );
 
-const donorModel = model("Donor", DonorSchema);
-export { donorModel };
+const adminModel = model("Admin", AdminSchema);
+export { adminModel };
