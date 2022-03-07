@@ -20,7 +20,7 @@ async function addUser(req: Request, res: Response) {
     return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
 
   // Check if it's a valid role type
-  if (!Object.values(ROLE).includes(role)) {
+  if (!Object.values(ROLE).includes(role) || role === ROLE.ADMIN) {
     return res.status(404).json({
       status: "ERROR",
       msg: "Undefined Role! If trying to register as admin, Don't",
