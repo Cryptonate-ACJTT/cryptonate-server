@@ -19,6 +19,14 @@ async function addUser(req: Request, res: Response) {
   if (!username || !password || !email || !role)
     return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
 
+  // Check if it's a valid role type
+  if (!Object.values(ROLE).includes(role)) {
+    return res.status(404).json({
+      status: "ERROR",
+      msg: "Undefined Role! If trying to register as admin, Don't",
+    });
+  }
+
   // CHECK IF USER ALREADY EXISTS BY THE email
   const existingUser =
     role === ROLE.DONOR
