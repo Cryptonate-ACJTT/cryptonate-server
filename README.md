@@ -41,6 +41,9 @@ npm run dev
 
 ## Folder Structure
 
+- apiTesting
+  - contains all endpoint for testing the api
+  - simply install `thunder client` from vscode
 - controller
   - (controller / service) contains main logic for each routes
 - db
