@@ -18,5 +18,5 @@ const FormSchema: Schema = new Schema(
   }
 );
 
-const organizationModel = model("Form", FormSchema);
-export { organizationModel };
+const formModel = model("Form", FormSchema);
+export { formModel };
