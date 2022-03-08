@@ -1,0 +1,22 @@
+### REGISTER USER 
+
+POST http://localhost:4000/api/v1/user HTTP/1.1
+content-type: application/json
+
+{
+    "username": "donor2",
+    "password": "password",
+    "email": "donor2@gmail.com",
+    "role": "donor"
+}
+
+### LOGIN USER
+
+POST http://localhost:4000/api/v1/user/login HTTP/1.1
+content-type: application/json
+
+{
+    "username": "donor2",
+    "password": "password",
+    "role": "donor"
+}
