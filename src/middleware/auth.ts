@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import User from "../models/User";
+import User from "../models/interface/User";
 import ENV from "../util/env";
 
 interface TokenPayload extends JwtPayload {
@@ -27,7 +27,11 @@ const verify = (req: CustomRequest, res: Response, next: NextFunction) => {
       });
     }
 
-    const verified = jwt.verify(token, ENV.JWT_SECRET) as TokenPayload;
+    // const verified = jwt.verify(token, ENV.JWT_SECRET) as TokenPayload;
+    const verified = jwt.verify(
+      token,
+      process.env.JWT_SECRET as string
+    ) as TokenPayload;
     req.userId = verified.userId;
 
     next();
