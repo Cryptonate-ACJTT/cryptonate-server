@@ -136,3 +136,5 @@ dist
 # ignore js files
 build
 build/*.js
+
+.env
