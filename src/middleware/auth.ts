@@ -27,7 +27,11 @@ const verify = (req: CustomRequest, res: Response, next: NextFunction) => {
       });
     }
 
-    const verified = jwt.verify(token, ENV.JWT_SECRET) as TokenPayload;
+    // const verified = jwt.verify(token, ENV.JWT_SECRET) as TokenPayload;
+    const verified = jwt.verify(
+      token,
+      process.env.JWT_SECRET as string
+    ) as TokenPayload;
     req.userId = verified.userId;
 
     next();

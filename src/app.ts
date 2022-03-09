@@ -1,8 +1,9 @@
+import "dotenv/config";
 import { connection } from "./db/dbconfig";
 import createServer from "./util/server";
 
 const app = createServer();
-const PORT = 4000; // Type assert to string
+const PORT = parseInt(process.env.PORT as string) || 4000; // Type assert to string
 
 // DB SETUP
 connection.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));
