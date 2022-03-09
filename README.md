@@ -25,6 +25,15 @@ npm run lint
 
 # running nodemon
 npm run dev
+
+# docker build image with tag
+docker image tag cryptonate-server_cryptonate aisenkim15/cryptonate-dev:v
+
+# docker push to repository
+docker image push aisenkim15/cryptonate-dev:v1
+
+# building image for linux
+docker buildx build --platform linux/amd64 --tag aisenkim15/cryptonate-dev:v1 .
 ```
 
 ## Technologies
