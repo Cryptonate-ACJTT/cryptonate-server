@@ -88,6 +88,7 @@ async function addUser(req: Request, res: Response) {
 /**
  * Expect user to provide username, password, role(admin, donor, organization)
  * @param req.body - {username, password, role}
+ * @param req
  * @param res
  *
  * @return login user otherwise error response
@@ -105,7 +106,7 @@ async function login(req: Request, res: Response) {
     console.log(`Error occured finding user: ${username}`);
     return res.status(404).json({
       status: "ERROR",
-      msg: "Login faile. Check username or password",
+      msg: "Login failed. Check username or password",
     });
   }
 
@@ -127,17 +128,17 @@ async function login(req: Request, res: Response) {
             email: user.email,
             role: user.role,
           },
-          msg: "User login Sucess",
+          msg: "User login success",
         });
     }
   } catch (err) {
-    console.log(`Error occured during bcrypt password comparisson`);
+    console.log(`Error occurred during bcrypt password comparison`);
   }
 
   // AT THIS POINT, RETURN ERROR
   return res.status(404).json({
     status: "ERROR",
-    msg: "Login faile. Check username or password",
+    msg: "Login failed. Check username or password",
   });
 }
 
