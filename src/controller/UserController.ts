@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { donorModel } from "../models/DonorModel";
 import { organizationModel } from "../models/OrganizationModel";
 import * as auth from "../middleware/auth";
@@ -68,7 +68,7 @@ async function addUser(req: Request, res: Response) {
   const token = auth.signToken(user);
 
   // RETURN USER WITH PARTIAL DATA
-  await res
+  res
     .cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -156,8 +156,47 @@ function logout(req: Request, res: Response) {
       .send();
   } catch (err) {
     console.log(err);
-    return res.status(500).send();
+    return res
+      .status(500)
+      .json({ status: "ERROR", msg: "Error while logging out" });
   }
 }
 
-export { addUser, login, logout };
+async function getLoggedIn(req: Request, res: Response) {
+  const userRole = req.body.role;
+  console.log("username: ", req.body.username);
+  console.log("role: ", req.body.role);
+  const isVerified = auth.verify(req, res);
+  if (!isVerified) {
+    return res.status(401).json({
+      loggedIn: false,
+      user: null,
+      status: "ERROR",
+      msg: "User is not verified",
+    });
+  }
+  try {
+    const loggedInUser =
+      userRole === ROLE.DONOR
+        ? await donorModel.findOne({ username: req.body.username })
+        : await organizationModel.findOne({ username: req.body.username });
+    return res.status(200).json({
+      loggedIn: true,
+      user: {
+        username: loggedInUser.username,
+        email: loggedInUser.email,
+        role: loggedInUser.role,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      loggedIn: false,
+      user: null,
+      status: "ERROR",
+      msg: "Error getting user",
+    });
+  }
+}
+
+export { addUser, login, logout, getLoggedIn };

@@ -41,7 +41,11 @@ function createServer() {
     app.use((0, express_1.urlencoded)({ extended: true }));
     app.use((0, cookie_parser_1.default)());
     app.use((0, cors_1.default)({
-        origin: ["http://localhost:3000", "http://aisencode.com:7000"],
+        origin: [
+            "http://localhost:3000",
+            "http://aisencode.com:7000",
+            "http://aisencode.com:3000",
+        ],
         credentials: true,
     }));
     // ROUTES
