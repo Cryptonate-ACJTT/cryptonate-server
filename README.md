@@ -1,12 +1,29 @@
 # Cryptonate Server [v1]
+
+## Table of Contents
+
+1. [Application Setup](#commands-to-setup-app-follow-these-commands-only)
+2. [Extra Commands](#extra-commands)
+3. [Tech Stack](#technologies)
+4. [Folder Structure](#folder-structure)
+5. [Docker Notes](#docker-setup-note)
+6. [Other Info](#note)
 ## Commands to Setup App (Follow these commands only)
+
+*Note 1* - If you choose to use mongodb from local machine, please go to `src/db/dbconfig.ts` and follow instructions in the file
+
+*Note 2* - Check if `.env` file exists in the root of the project. If it doesn't pull it from the private repository in cryptonate organization repo and place the file at the root of this project
+
 
 ```bash
 # 1. install packages
 npm install 
 
-# 2. Start mongodb on docker container OR use your own mongodb on your computer
+# 2. Start MongoDB (Choose one)
+#2.1 Starting mongodb using docker-compose
 docker-compose -f docker-compose-mongo.yml up -d
+
+#2.2 Install mongo on your local machine
 
 # 3. Start application (Run one of the two commands)
 npm start     # 1. running app without nodemon
