@@ -10,9 +10,7 @@
 6. [Other Info](#note)
 ## Commands to Setup App (Follow these commands only)
 
-*Note 1* - If you choose to use mongodb from local machine, please go to `src/db/dbconfig.ts` and follow instructions in the file
-
-*Note 2* - Check if `.env` file exists in the root of the project. If it doesn't pull it from the private repository in cryptonate organization repo and place the file at the root of this project
+*Note 1* - Check if `.env` file exists in the root of the project. If it doesn't pull it from the private repository in cryptonate organization repo and place the file at the root of this project
 
 
 ```bash
