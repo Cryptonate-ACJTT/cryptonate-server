@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { donorModel } from "../models/DonorModel";
 import { organizationModel } from "../models/OrganizationModel";
 import * as auth from "../middleware/auth";
@@ -20,7 +20,7 @@ async function addUser(req: Request, res: Response) {
     return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
 
   // Check if it's a valid role type
-  if (!Object.values(ROLE).includes(role)) {
+  if (!Object.values(ROLE).includes(role) || role === ROLE.ADMIN) {
     return res.status(404).json({
       status: "ERROR",
       msg: "Undefined Role! If trying to register as admin, Don't",
@@ -68,7 +68,7 @@ async function addUser(req: Request, res: Response) {
   const token = auth.signToken(user);
 
   // RETURN USER WITH PARTIAL DATA
-  await res
+  res
     .cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -88,6 +88,7 @@ async function addUser(req: Request, res: Response) {
 /**
  * Expect user to provide username, password, role(admin, donor, organization)
  * @param req.body - {username, password, role}
+ * @param req
  * @param res
  *
  * @return login user otherwise error response
@@ -105,7 +106,7 @@ async function login(req: Request, res: Response) {
     console.log(`Error occured finding user: ${username}`);
     return res.status(404).json({
       status: "ERROR",
-      msg: "Login faile. Check username or password",
+      msg: "Login failed. Check username or password",
     });
   }
 
@@ -127,17 +128,17 @@ async function login(req: Request, res: Response) {
             email: user.email,
             role: user.role,
           },
-          msg: "User login Sucess",
+          msg: "User login success",
         });
     }
   } catch (err) {
-    console.log(`Error occured during bcrypt password comparisson`);
+    console.log(`Error occurred during bcrypt password comparison`);
   }
 
   // AT THIS POINT, RETURN ERROR
   return res.status(404).json({
     status: "ERROR",
-    msg: "Login faile. Check username or password",
+    msg: "Login failed. Check username or password",
   });
 }
 
@@ -156,8 +157,47 @@ function logout(req: Request, res: Response) {
       .send();
   } catch (err) {
     console.log(err);
-    return res.status(500).send();
+    return res
+      .status(500)
+      .json({ status: "ERROR", msg: "Error while logging out" });
   }
 }
 
-export { addUser, login, logout };
+async function getLoggedIn(req: Request, res: Response) {
+  const userRole = req.body.role;
+  console.log("username: ", req.body.username);
+  console.log("role: ", req.body.role);
+  const isVerified = auth.verify(req, res);
+  if (!isVerified) {
+    return res.status(401).json({
+      loggedIn: false,
+      user: null,
+      status: "ERROR",
+      msg: "User is not verified",
+    });
+  }
+  try {
+    const loggedInUser =
+      userRole === ROLE.DONOR
+        ? await donorModel.findOne({ username: req.body.username })
+        : await organizationModel.findOne({ username: req.body.username });
+    return res.status(200).json({
+      loggedIn: true,
+      user: {
+        username: loggedInUser.username,
+        email: loggedInUser.email,
+        role: loggedInUser.role,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      loggedIn: false,
+      user: null,
+      status: "ERROR",
+      msg: "Error getting user",
+    });
+  }
+}
+
+export { addUser, login, logout, getLoggedIn };

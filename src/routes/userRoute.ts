@@ -15,5 +15,6 @@ const router = Router();
 router.post("/", UserController.addUser);
 router.post("/login", UserController.login);
 router.post("/logout", UserController.logout);
+router.post("/loggedIn", UserController.getLoggedIn);
 
 export { router as UserRouter };
