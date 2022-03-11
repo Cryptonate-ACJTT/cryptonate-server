@@ -1,6 +1,19 @@
 # Cryptonate Server [v1]
+## Commands to Setup App (Follow these commands only)
 
-## Commands
+```bash
+# 1. install packages
+npm install 
+
+# 2. Start mongodb on docker container OR use your own mongodb on your computer
+docker-compose -f docker-compose-mongo.yml up -d
+
+# 3. Start application (Run one of the two commands)
+npm start     # 1. running app without nodemon
+npm run dev   # 2. running app with nodemon  
+```
+
+## Extra Commands
 
 ```bash
 # Install Application
@@ -15,6 +28,7 @@ docker-compose up -d # older version
 
 # docker compose running with new build (When configuration change and etc...)
 docker compose up -d --build
+docker-compose up -d --build
 
 # docker compose stop the containers
 docker compose down # newer version
@@ -26,14 +40,19 @@ npm run lint
 # running nodemon
 npm run dev
 
+################################################################################################
+# Use next two commands to build and push to production repository  
+docker compose -f docker-compose-prod.yml build # this will build with `latest` tag 
+# building image for linux
+docker buildx build --platform linux/amd64 --push --tag aisenkim15/cryptonate-dev:latest .
+################################################################################################
+
+################################## Extra Docker Commands #######################################
 # docker build image with tag
 docker image tag cryptonate-server_cryptonate aisenkim15/cryptonate-dev:v
-
 # docker push to repository
 docker image push aisenkim15/cryptonate-dev:v1
-
-# building image for linux
-docker buildx build --platform linux/amd64 --tag --push aisenkim15/cryptonate-dev:v1 .
+################################################################################################
 ```
 
 ## Technologies
@@ -85,9 +104,3 @@ docker buildx build --platform linux/amd64 --tag --push aisenkim15/cryptonate-de
 
 - All routes will start with /api/[version]
 - During dev, setup cors to localhost:3000
-
-## TODO Note
-
-- Keep basic entity type in the jwt token so I can create only one login method and etc...
-- Differentiate the entity name being saved in the token to what is being saved as ROLE in the database for security reasons
-- Flow: user press login -> server checks the toke and sees what entity this person has -> server find() on that entity to check if that person exists or not
