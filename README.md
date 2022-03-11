@@ -104,4 +104,3 @@ docker image push aisenkim15/cryptonate-dev:v1
 
 - All routes will start with /api/[version]
 - During dev, setup cors to localhost:3000
-
