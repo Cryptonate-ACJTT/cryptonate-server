@@ -1,0 +1,29 @@
+version: "3"
+services:
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    #    environment:
+    #      - MONGO_INITDB_ROOT_USERNAME=admin
+    #      - MONGO_INITDB_ROOT_PASSWORD=password
+    container_name: mongodb-cryptonate
+    volumes:
+      - ~/mongo:/data/db
+    networks:
+      - mongo-compose-network
+  cryptonate:
+    build:
+      context: .
+      dockerfile: ./DockerfileProd
+    ports:
+      - "4000:4000"
+    networks:
+      - mongo-compose-network
+    depends_on:
+      - mongodb
+    links:
+      - mongodb
+networks:
+  mongo-compose-network:
+    driver: bridge
