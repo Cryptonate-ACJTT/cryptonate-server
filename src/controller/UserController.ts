@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { donorModel } from "../models/DonorModel";
 import { organizationModel } from "../models/OrganizationModel";
 import * as auth from "../middleware/auth";
