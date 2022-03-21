@@ -1,9 +1,6 @@
 import express, {
   Express,
   urlencoded,
-  Request,
-  Response,
-  application,
 } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";

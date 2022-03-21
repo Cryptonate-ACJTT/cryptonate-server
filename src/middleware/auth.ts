@@ -41,7 +41,7 @@ const verify = (req: Request, res: Response) => {
 const signToken = (user: User) => {
   return jwt.sign(
     {
-      userId: user.id,
+      username: user.username,
     },
     ENV.JWT_SECRET
   );
