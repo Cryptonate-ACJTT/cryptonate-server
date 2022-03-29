@@ -1,4 +1,4 @@
-import { Router } from "express";
+import {Router} from "express";
 import * as UserController from "../controller/UserController";
 
 /**
@@ -16,5 +16,6 @@ router.post("/", UserController.addUser);
 router.post("/login", UserController.login);
 router.post("/logout", UserController.logout);
 router.post("/loggedIn", UserController.getLoggedIn);
+router.post("/orgForm", UserController.submitOrgAuthenticationForm);
 
-export { router as UserRouter };
+export {router as UserRouter};

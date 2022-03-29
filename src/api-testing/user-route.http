@@ -4,10 +4,10 @@ POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
 
 {
-    "username": "donor2",
-    "password": "password",
-    "email": "donor2@gmail.com",
-    "role": "donor"
+  "username": "donor2",
+  "password": "password",
+  "email": "donor2@gmail.com",
+  "role": "donor"
 }
 
 ### LOGIN USER
@@ -16,9 +16,9 @@ POST http://localhost:4000/api/v1/user/login HTTP/1.1
 content-type: application/json
 
 {
-    "username": "donor2",
-    "password": "password",
-    "role": "donor"
+  "username": "donor2",
+  "password": "password",
+  "role": "donor"
 }
 
 ### Logout User
@@ -34,8 +34,24 @@ POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
 
 {
-    "username": "org",
-    "password": "password",
-    "email": "org@gmail.com",
-    "role": "organization"
+  "username": "org",
+  "password": "password",
+  "email": "org@gmail.com",
+  "role": "organization"
+}
+
+### Organization Authentication Form Submit
+
+POST http://localhost:4000/api/v1/user/orgForm HTTP/1.1
+content-type: application/json
+
+{
+  "orgId": "org",
+  "name": "org",
+  "EIN": "123456",
+  "category": "animal",
+  "email": "org@gmail.com",
+  "phone": "123456789",
+  "location": "Stony Brook",
+  "website": "org.com"
 }
