@@ -154,6 +154,7 @@ function logout(req: Request, res: Response) {
             .status(200)
             .json({
                 success: true,
+                status: "OK"
             })
             .send();
     } catch (err) {
