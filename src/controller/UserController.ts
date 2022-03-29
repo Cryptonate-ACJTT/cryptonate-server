@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/interface/User";
 import ROLE from "../models/Role";
 import {adminModel} from "../models/AdminModel";
-import {authFormModel} from "../models/AuthFormModel";
+import {AuthForm, authFormModel} from "../models/AuthFormModel";
 
 /**
  * User Registration and assign JWT token
@@ -272,9 +272,41 @@ async function editOrgAuthenticationForm(req: Request, res: Response) {
         phone,
         location,
         website,
-        approved
     } = req.body;
 
+    if (!orgId)
+        return res
+            .status(404)
+            .json({status: "ERROR", msg: `Provide orgId (username for organization)`});
+
+    // const orgForm: Array<AuthForm> = await authFormModel.find({orgId});
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
+
+    if (name) orgForm.name = name;
+    if (EIN) orgForm.EIN = EIN;
+    if (category) orgForm.category = category;
+    if (email) orgForm.email = email;
+    if (phone) orgForm.phone = phone;
+    if (location) orgForm.location = location;
+    if (website) orgForm.website = website;
+
+    await orgForm.save();
+
+    return res.status(200).json({
+        status: "OK", msg: "Update Successful",
+        form: orgForm
+    })
 }
 
-export {addUser, login, logout, getLoggedIn, submitOrgAuthenticationForm};
+export {
+    addUser,
+    login,
+    logout,
+    getLoggedIn,
+    submitOrgAuthenticationForm,
+    editOrgAuthenticationForm
+};

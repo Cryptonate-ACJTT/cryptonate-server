@@ -1,10 +1,22 @@
-import {model, Schema} from "mongoose";
+import {model, Schema, Model, Document} from "mongoose";
 
 /**
  * Information Form for Authentication
  */
 
-const AuthFormSchema: Schema = new Schema(
+interface AuthForm extends Document{
+    orgId: string
+    name: string
+    EIN: string
+    category: string
+    email: string
+    phone: string
+    location: string
+    website: string
+    approved:boolean
+}
+
+const AuthFormSchema: Schema = new Schema<AuthForm>(
     {
         orgId: {type: String, required: true}, // organization username
         name: {type: String, required: true},
@@ -21,5 +33,5 @@ const AuthFormSchema: Schema = new Schema(
     }
 );
 
-const authFormModel = model("AuthForm", AuthFormSchema);
-export {authFormModel};
+const authFormModel: Model<AuthForm> = model("AuthForm", AuthFormSchema);
+export {authFormModel, AuthForm};
