@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/interface/User";
 import ROLE from "../models/Role";
 import {adminModel} from "../models/AdminModel";
-import {authFormModel} from "../models/AuthFormModel";
+import {AuthForm, authFormModel} from "../models/AuthFormModel";
 
 /**
  * User Registration and assign JWT token
@@ -169,15 +169,15 @@ async function getLoggedIn(req: Request, res: Response) {
     const userRole = req.body.role;
     console.log("username: ", req.body.username);
     console.log("role: ", req.body.role);
-    const isVerified = auth.verify(req, res);
-    if (!isVerified) {
-        return res.status(401).json({
-            loggedIn: false,
-            user: null,
-            status: "ERROR",
-            msg: "User is not verified",
-        });
-    }
+    // const isVerified = auth.verify(req, res);
+    // if (!isVerified) {
+    //     return res.status(401).json({
+    //         loggedIn: false,
+    //         user: null,
+    //         status: "ERROR",
+    //         msg: "User is not verified",
+    //     });
+    // }
     try {
         const loggedInUser =
             userRole === ROLE.DONOR
@@ -215,6 +215,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
         phone,
         location,
         website,
+        approved
     } = req.body;
 
     // CHECK IF ALL FIELDS ARE VALID
@@ -243,8 +244,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
                 msg: "The form already exists for this organization!",
             });
         }
-        console.log(req.body);
-        newOrg = new authFormModel({orgId, name, EIN, category, email, phone, location, website});
+        newOrg = new authFormModel({orgId, name, EIN, category, email, phone, location, website, approved});
         await newOrg.save();
     } catch (err) {
         return res
@@ -255,4 +255,84 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
     res.status(201).json({status: "SUCCESS", msg: "Form successfully saved!"});
 }
 
-export {addUser, login, logout, getLoggedIn, submitOrgAuthenticationForm};
+
+/**
+ * Edits organization authentication form
+ * @param req
+ * @param res
+ * orgId -> username for organization (can't be updated)
+ */
+async function editOrgAuthenticationForm(req: Request, res: Response) {
+    const {
+        orgId,
+        name,
+        EIN,
+        category,
+        email,
+        phone,
+        location,
+        website,
+    } = req.body;
+
+    if (!orgId)
+        return res
+            .status(404)
+            .json({status: "ERROR", msg: `Provide orgId (username for organization)`});
+
+    // const orgForm: Array<AuthForm> = await authFormModel.find({orgId});
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
+
+    if (name) orgForm.name = name;
+    if (EIN) orgForm.EIN = EIN;
+    if (category) orgForm.category = category;
+    if (email) orgForm.email = email;
+    if (phone) orgForm.phone = phone;
+    if (location) orgForm.location = location;
+    if (website) orgForm.website = website;
+
+    await orgForm.save();
+
+    return res.status(200).json({
+        status: "OK", msg: "Update Successful",
+        form: orgForm
+    })
+}
+
+/**
+ * Get organization authentication form
+ * @param req
+ * @param res
+ */
+async function getOrgAuthenticationForm(req: Request, res: Response) {
+    const {orgId} = req.body;
+    if (!orgId)
+        return res
+            .status(404)
+            .json({status: "ERROR", msg: `Provide orgId (username for organization)`});
+
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
+
+    return res.status(200).json({
+        status: "OK", msg: "Found Form",
+        form: orgForm
+    })
+}
+
+export {
+    addUser,
+    login,
+    logout,
+    getLoggedIn,
+    submitOrgAuthenticationForm,
+    editOrgAuthenticationForm,
+    getOrgAuthenticationForm
+};

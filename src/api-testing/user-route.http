@@ -21,6 +21,16 @@ content-type: application/json
   "role": "donor"
 }
 
+### GET LOGGEDIN
+
+POST http://localhost:4000/api/v1/user/loggedIn HTTP/1.1
+content-type: application/json
+
+{
+  "username": "donor2",
+  "role": "donor"
+}
+
 ### Logout User
 
 POST http://localhost:4000/api/v1/user/logout HTTP/1.1
@@ -40,9 +50,9 @@ content-type: application/json
   "role": "organization"
 }
 
-### Organization Authentication Form Submit
+### Organization Authentication Form CREATE
 
-POST http://localhost:4000/api/v1/user/orgForm HTTP/1.1
+POST http://localhost:4000/api/v1/user/submitOrgForm HTTP/1.1
 content-type: application/json
 
 {
@@ -53,5 +63,26 @@ content-type: application/json
   "email": "org@gmail.com",
   "phone": "123456789",
   "location": "Stony Brook",
+  "website": "org.com",
+  "approved": "false"
+}
+
+### Organization Authentication Form UPDATE
+
+POST http://localhost:4000/api/v1/user/updateOrgForm HTTP/1.1
+content-type: application/json
+
+{
+  "orgId": "org",
+  "name": "organization updated",
   "website": "org.com"
+}
+
+### Organization Authentication Form GET
+
+POST http://localhost:4000/api/v1/user/orgForm HTTP/1.1
+content-type: application/json
+
+{
+  "orgId": "org"
 }

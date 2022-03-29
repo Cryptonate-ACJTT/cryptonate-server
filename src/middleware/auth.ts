@@ -7,18 +7,19 @@ import TokenPayload from "../models/interface/TokenPayload";
 /**
  * @brief If verified returns true, else false (or returns error message)
  */
-const verify = (req: Request, res: Response) => {
+const verify = (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies.token;
     console.log(req.cookies);
     if (!token) {
-      // return res.status(401).json({
-      //   loggedIn: false,
-      //   user: null,
-      //   errorMessage: "Unauthorized",
-      // });
-      console.log("No token is provided");
-      return false;
+      return res.status(401).json({
+        loggedIn: false,
+        user: null,
+        errorMessage: "Unauthorized",
+      });
+      // ************************
+      // console.log("No token is provided");
+      // return false;
     }
 
     // const verified = jwt.verify(token, ENV.JWT_SECRET) as TokenPayload;
@@ -28,13 +29,16 @@ const verify = (req: Request, res: Response) => {
     ) as TokenPayload;
     req.username = verified.username;
 
-    return true;
+    next();
+    // ************************
+    // return true;
   } catch (err) {
-    // console.error("verify error in catch block: ", err);
-    // return res.status(401).json({
-    //   errorMessage: "Unauthorized",
-    // });
-    return false;
+    console.error("verify error in catch block: ", err);
+    return res.status(401).json({
+      errorMessage: "Unauthorized",
+    });
+    // ************************
+    // return false;
   }
 };
 
