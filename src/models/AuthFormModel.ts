@@ -14,6 +14,7 @@ const AuthFormSchema: Schema = new Schema(
         phone: {type: String, required: true},
         location: {type: String, required: true},
         website: {type: String, required: true},
+        approved: {type: Boolean, required: true}
     },
     {
         timestamps: true,

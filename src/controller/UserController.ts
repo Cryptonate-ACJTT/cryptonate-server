@@ -169,15 +169,15 @@ async function getLoggedIn(req: Request, res: Response) {
     const userRole = req.body.role;
     console.log("username: ", req.body.username);
     console.log("role: ", req.body.role);
-    const isVerified = auth.verify(req, res);
-    if (!isVerified) {
-        return res.status(401).json({
-            loggedIn: false,
-            user: null,
-            status: "ERROR",
-            msg: "User is not verified",
-        });
-    }
+    // const isVerified = auth.verify(req, res);
+    // if (!isVerified) {
+    //     return res.status(401).json({
+    //         loggedIn: false,
+    //         user: null,
+    //         status: "ERROR",
+    //         msg: "User is not verified",
+    //     });
+    // }
     try {
         const loggedInUser =
             userRole === ROLE.DONOR
@@ -215,6 +215,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
         phone,
         location,
         website,
+        approved
     } = req.body;
 
     // CHECK IF ALL FIELDS ARE VALID
@@ -243,8 +244,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
                 msg: "The form already exists for this organization!",
             });
         }
-        console.log(req.body);
-        newOrg = new authFormModel({orgId, name, EIN, category, email, phone, location, website});
+        newOrg = new authFormModel({orgId, name, EIN, category, email, phone, location, website, approved});
         await newOrg.save();
     } catch (err) {
         return res
@@ -253,6 +253,28 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
     }
 
     res.status(201).json({status: "SUCCESS", msg: "Form successfully saved!"});
+}
+
+
+/**
+ * Edits organization authentication form
+ * @param req
+ * @param res
+ * orgId -> username for organization (can't be updated)
+ */
+async function editOrgAuthenticationForm(req: Request, res: Response) {
+    const {
+        orgId,
+        name,
+        EIN,
+        category,
+        email,
+        phone,
+        location,
+        website,
+        approved
+    } = req.body;
+
 }
 
 export {addUser, login, logout, getLoggedIn, submitOrgAuthenticationForm};

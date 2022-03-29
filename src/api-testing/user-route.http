@@ -21,6 +21,16 @@ content-type: application/json
   "role": "donor"
 }
 
+### GET LOGGEDIN
+
+POST http://localhost:4000/api/v1/user/loggedIn HTTP/1.1
+content-type: application/json
+
+{
+  "username": "donor2",
+  "role": "donor"
+}
+
 ### Logout User
 
 POST http://localhost:4000/api/v1/user/logout HTTP/1.1
@@ -53,5 +63,6 @@ content-type: application/json
   "email": "org@gmail.com",
   "phone": "123456789",
   "location": "Stony Brook",
-  "website": "org.com"
+  "website": "org.com",
+  "approved": "false"
 }
