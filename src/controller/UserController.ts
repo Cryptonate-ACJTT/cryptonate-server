@@ -302,11 +302,37 @@ async function editOrgAuthenticationForm(req: Request, res: Response) {
     })
 }
 
+/**
+ * Get organization authentication form
+ * @param req
+ * @param res
+ */
+async function getOrgAuthenticationForm(req: Request, res: Response) {
+    const {orgId} = req.body;
+    if (!orgId)
+        return res
+            .status(404)
+            .json({status: "ERROR", msg: `Provide orgId (username for organization)`});
+
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
+
+    return res.status(200).json({
+        status: "OK", msg: "Found Form",
+        form: orgForm
+    })
+}
+
 export {
     addUser,
     login,
     logout,
     getLoggedIn,
     submitOrgAuthenticationForm,
-    editOrgAuthenticationForm
+    editOrgAuthenticationForm,
+    getOrgAuthenticationForm
 };

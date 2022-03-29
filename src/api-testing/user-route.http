@@ -50,9 +50,9 @@ content-type: application/json
   "role": "organization"
 }
 
-### Organization Authentication Form Submit
+### Organization Authentication Form CREATE
 
-POST http://localhost:4000/api/v1/user/orgForm HTTP/1.1
+POST http://localhost:4000/api/v1/user/submitOrgForm HTTP/1.1
 content-type: application/json
 
 {
@@ -67,7 +67,7 @@ content-type: application/json
   "approved": "false"
 }
 
-### Organization Authentication Form Update
+### Organization Authentication Form UPDATE
 
 POST http://localhost:4000/api/v1/user/updateOrgForm HTTP/1.1
 content-type: application/json
@@ -76,4 +76,13 @@ content-type: application/json
   "orgId": "org",
   "name": "organization updated",
   "website": "org.com"
+}
+
+### Organization Authentication Form GET
+
+POST http://localhost:4000/api/v1/user/orgForm HTTP/1.1
+content-type: application/json
+
+{
+  "orgId": "org"
 }

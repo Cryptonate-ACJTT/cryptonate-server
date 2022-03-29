@@ -17,7 +17,8 @@ router.post("/", UserController.addUser);
 router.post("/login", UserController.login);
 router.post("/logout", UserController.logout);
 router.post("/loggedIn", verify, UserController.getLoggedIn);
-router.post("/orgForm", UserController.submitOrgAuthenticationForm);
+router.post("/orgForm", UserController.getOrgAuthenticationForm);
+router.post("/submitOrgForm", UserController.submitOrgAuthenticationForm);
 router.post("/updateOrgForm", UserController.editOrgAuthenticationForm);
 
 export {router as UserRouter};
