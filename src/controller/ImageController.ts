@@ -14,10 +14,13 @@ const getSingleImage = (req: Request, res: Response) => {
 
 const uploadSingleImage = async (req: Request, res: Response) => {
   const file = req.file as Express.Multer.File;
+  console.log(req);
   const result = await uploadFile(file);
   await unlinkFile(file.path); // DELETE THE FILE ONECE UPLAODED TO S3
-  console.log(`Result ${result}`);
+  console.log("Result is: ")
+  console.log(result);
   const description = req.body.description;
+  console.log(`Description is: ${description}`)
   res.send({ imagePath: `/images/${result.Key}` });
 };
 

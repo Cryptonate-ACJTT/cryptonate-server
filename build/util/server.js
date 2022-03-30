@@ -32,6 +32,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 // ROUTE IMPORTS
 const userRoute_1 = require("../routes/userRoute");
 const imageRouter_1 = require("../routes/imageRouter");
+const projectRoute_1 = require("../routes/projectRoute");
 function createServer() {
     // INIT CONFIG - port numbers and etc...
     const app = (0, express_1.default)();
@@ -50,6 +51,7 @@ function createServer() {
     // ROUTES
     app.use("/api/v1/user", userRoute_1.UserRouter);
     app.use("/api/v1/images", imageRouter_1.ImageRouter);
+    app.use("/api/v1/project", projectRoute_1.ProjectRouter);
     // RETURN THE APP TO BE USED FOR TESTING AND app.ts
     return app;
 }
