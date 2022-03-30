@@ -1,4 +1,5 @@
-### REGISTER USER 
+
+### REGISTER USER
 
 POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
@@ -85,4 +86,76 @@ content-type: application/json
 
 {
   "orgId": "org"
+}
+
+
+### Project Form CREATE
+
+POST http://localhost:4000/api/v1/project/create
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="angry_lolli.jpeg"
+Content-Type: image/jpeg
+
+< ../../angry_lolli.jpeg
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="orgName"
+
+org
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="projectName"
+
+New Project
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="projectSubTitle"
+
+Subtitle
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="category"
+
+Animal
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="summary"
+
+This is a summary
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="solution"
+
+this is a solution
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="goalAmount"
+
+1234.00
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="totalSaved"
+
+12.00
+--WebAppBoundary--
+
+
+### GET project
+
+POST http://localhost:4000/api/v1/project HTTP/1.1
+content-type: application/json
+
+{
+  "orgName": "org",
+  "projectName": "New Project"
 }

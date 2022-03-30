@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 // ROUTE IMPORTS
 import {UserRouter} from "../routes/userRoute";
 import {ImageRouter} from "../routes/imageRouter";
+import {ProjectRouter} from "../routes/projectRoute";
 
 function createServer() {
     // INIT CONFIG - port numbers and etc...
@@ -31,6 +32,7 @@ function createServer() {
     // ROUTES
     app.use("/api/v1/user", UserRouter);
     app.use("/api/v1/images", ImageRouter);
+    app.use("/api/v1/project", ProjectRouter);
 
     // RETURN THE APP TO BE USED FOR TESTING AND app.ts
     return app;
