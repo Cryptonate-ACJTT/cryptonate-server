@@ -75,7 +75,7 @@ async function createProject(req: Request, res: Response) {
         category,
         summary,
         solution,
-        image: `/images/${result.Key}`,
+        image: `/api/v1/images/${result.Key}`,
         goalAmount,
         totalSaved
     })
