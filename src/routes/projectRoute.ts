@@ -8,6 +8,7 @@ const router = Router();
 
 router.post("/", ProjectController.getProject);
 router.post("/create", upload.single("image"), ProjectController.createProject);
+router.get("/frontpage", ProjectController.getFrontPageStats);
 
 export {router as ProjectRouter};
 
