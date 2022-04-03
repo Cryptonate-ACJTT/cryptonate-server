@@ -3,6 +3,7 @@ import {uploadFile, getFile} from "../util/s3";
 import fs from "fs";
 import {promisify} from "util";
 import {Project, projectModel} from "../models/ProjectModel";
+import {donorModel} from "../models/DonorModel";
 
 /**
  * Contains everything related to Explore page and Project page
@@ -29,7 +30,8 @@ async function createProject(req: Request, res: Response) {
         summary,
         solution,
         goalAmount,
-        totalSaved
+        totalSaved,
+        projectOpen
     } = req.body;
 
     // CHECK IF ALL FIELDS ARE VALID
@@ -93,15 +95,15 @@ async function createProject(req: Request, res: Response) {
  */
 async function getProject(req: Request, res: Response) {
     const {orgName, projectName} = req.body;
-    if(!orgName || !projectName)
+    if (!orgName || !projectName)
         return res
             .status(404)
             .json({status: "ERROR", msg: `Missing orgName: ${orgName} or projectName: ${projectName}.`});
     const project = await projectModel.findOne({orgName, projectName})
-    if(!project)
+    if (!project)
         return res
-        .status(404)
-        .json({status: "ERROR", msg: `Project not found by the projectName: ${projectName}`});
+            .status(404)
+            .json({status: "ERROR", msg: `Project not found by the projectName: ${projectName}`});
     return res
         .status(200)
         .json({
@@ -111,4 +113,38 @@ async function getProject(req: Request, res: Response) {
         })
 }
 
-export { getSingleImage, createProject, getProject};
+/**
+ * [GET] Open fundraiser count, amount of total donation, total donors
+ * Currently, make total donors as all the registered users
+ * @param req
+ * @param res
+ */
+async function getFrontPageStats(req: Request, res: Response) {
+    // GET OPEN FUNDRAISER COUNT
+    const fundraiserCount = await projectModel.countDocuments({projectOpen: true})
+
+    // GET TOTAL ALGO AMOUNT DONATED
+    const total = await projectModel.aggregate([
+        {
+            $group: {
+                _id: null,
+                total: {
+                    $sum: "$totalSaved"
+                }
+            },
+        }])
+    let totalAlgo = 0;
+    if (total && total.length > 0) {
+        totalAlgo = total[0].total;
+    }
+
+    // GET NUMBER OF DONORS
+    const donorCount = await donorModel.countDocuments();
+
+
+    res.json({
+        status: "OK", msg: "success", fundraiserCount, total: totalAlgo, donorCount
+    })
+}
+
+export {getSingleImage, createProject, getProject, getFrontPageStats};
