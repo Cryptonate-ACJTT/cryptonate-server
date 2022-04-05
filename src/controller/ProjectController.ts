@@ -44,12 +44,15 @@ async function createProject(req: Request, res: Response) {
         !summary ||
         !solution ||
         !goalAmount ||
-        !totalSaved
+        !totalSaved ||
+        !req.file
     ) {
         return res
             .status(404)
             .json({status: "ERROR", msg: `Field missing from the form`});
     }
+
+    console.log(req.file)
 
     try {
         // CHECK IF SAME PROJECT ALREADY EXISTS
@@ -65,6 +68,7 @@ async function createProject(req: Request, res: Response) {
             .status(500)
             .json({status: "ERROR", msg: `Error saving the form to the database`});
     }
+
 
     // post image to server
     const file = req.file as Express.Multer.File;
