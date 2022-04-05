@@ -52,12 +52,6 @@ Content-Disposition: form-data; name="goalAmount"
 1234.00
 --WebAppBoundary--
 
---WebAppBoundary
-Content-Disposition: form-data; name="totalSaved"
-
-14.66
---WebAppBoundary--
-
 
 ### GET project
 

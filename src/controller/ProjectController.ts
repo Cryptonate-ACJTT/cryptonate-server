@@ -30,7 +30,6 @@ async function createProject(req: Request, res: Response) {
         summary,
         solution,
         goalAmount,
-        totalSaved,
         projectOpen
     } = req.body;
 
@@ -44,7 +43,6 @@ async function createProject(req: Request, res: Response) {
         !summary ||
         !solution ||
         !goalAmount ||
-        !totalSaved ||
         !req.file
     ) {
         return res
@@ -84,8 +82,8 @@ async function createProject(req: Request, res: Response) {
         solution,
         image: `/api/v1/images/${result.Key}`,
         goalAmount,
-        totalSaved
     })
+
 
     await newProject.save();
     res.status(201).json({status: "SUCCESS", msg: "Form successfully saved!"});
