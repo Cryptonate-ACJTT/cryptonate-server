@@ -34,6 +34,7 @@ async function createProject(req: Request, res: Response) {
         projectOpen
     } = req.body;
 
+
     // CHECK IF ALL FIELDS ARE VALID
     if (
         !orgName ||
@@ -99,6 +100,7 @@ async function getProject(req: Request, res: Response) {
         return res
             .status(404)
             .json({status: "ERROR", msg: `Missing orgName: ${orgName} or projectName: ${projectName}.`});
+
     const project = await projectModel.findOne({orgName, projectName})
     if (!project)
         return res
@@ -147,4 +149,58 @@ async function getFrontPageStats(req: Request, res: Response) {
     })
 }
 
-export {getSingleImage, createProject, getProject, getFrontPageStats};
+/**
+ * [GET] Retrieve all project for Explore Page
+ * [TODO] - Later think about only sending first 20 open projects
+ * @param req
+ * @param res
+ */
+async function getAllProjects(req: Request, res: Response) {
+    // GET PROJECTS
+    let projects = [];
+    try {
+        projects = await projectModel.find();
+    } catch (err) {
+        return res.status(500).json({status: "ERROR", msg: "Error retrieving project from db"})
+    }
+
+    return res.json({
+        status: "OK", msg: "success", projects
+    })
+}
+
+/**
+ * [GET] Get project by query parameters
+ * category and search could be
+ * @param req - params(category, search)
+ * @param res
+ */
+async function getProjectsBySearch(req: Request, res: Response) {
+    const categoryParam = req.query.category;
+    const searchParam = req.query.search;
+
+    let projects
+
+    // when both aren't provided -> returns empty array of projects
+    if (!searchParam && !categoryParam) {
+        return res.json({status: "OK", msg: "Search nor category were provided", projects: []})
+    } else if (searchParam && categoryParam) {
+        projects = await projectModel.find({category: categoryParam, projectName: searchParam})
+    } else if (searchParam) {
+        projects = await projectModel.find({projectName: searchParam})
+    } else {
+        projects = await projectModel.find({category: categoryParam})
+    }
+
+
+    return res.json({status: "OK", msg: "success", projects})
+}
+
+export {
+    getSingleImage,
+    createProject,
+    getProject,
+    getFrontPageStats,
+    getAllProjects,
+    getProjectsBySearch
+};
