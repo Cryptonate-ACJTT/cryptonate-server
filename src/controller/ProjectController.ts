@@ -80,7 +80,7 @@ async function createProject(req: Request, res: Response) {
         category,
         summary,
         solution,
-        image: `/api/v1/images/${result.Key}`,
+        image: `/images/${result.Key}`,
         goalAmount,
     })
 
