@@ -95,6 +95,7 @@ async function createProject(req: Request, res: Response) {
  */
 async function getProject(req: Request, res: Response) {
   const { id } = req.body;
+  console.log(req);
   console.log("ID IS: ", id);
   if (!id) return res.status(404).json({ status: "ERROR", msg: `Missing id.` });
 
