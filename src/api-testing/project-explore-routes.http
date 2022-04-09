@@ -59,8 +59,7 @@ POST http://localhost:4000/api/v1/project HTTP/1.1
 content-type: application/json
 
 {
-  "orgName": "org",
-  "projectName": "Third Project"
+  "id" : "624ca0829a5d50fe12a6c39d"
 }
 
 

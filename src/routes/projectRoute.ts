@@ -1,7 +1,6 @@
-import {Router} from "express";
-import * as ProjectController from "../controller/ProjectController"
+import { Router } from "express";
+import * as ProjectController from "../controller/ProjectController";
 import multer from "multer";
-
 
 const upload = multer({ dest: "uploads" });
 const router = Router();
@@ -12,6 +11,6 @@ router.get("/frontpage", ProjectController.getFrontPageStats);
 router.get("/explore", ProjectController.getAllProjects);
 router.get("/explore/search", ProjectController.getProjectsBySearch);
 
-export {router as ProjectRouter};
+export { router as ProjectRouter };
 
 //
