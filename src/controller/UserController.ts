@@ -253,7 +253,6 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
       phone,
       location,
       website,
-      approved,
     });
     await newOrg.save();
   } catch (err) {

@@ -45,11 +45,12 @@ POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
 
 {
-  "username": "org",
+  "username": "newOrg",
   "password": "password",
-  "email": "org@gmail.com",
+  "email": "neworg@gmail.com",
   "role": "organization"
 }
+
 
 ### Organization Authentication Form CREATE
 
@@ -57,16 +58,16 @@ POST http://localhost:4000/api/v1/user/submitOrgForm HTTP/1.1
 content-type: application/json
 
 {
-  "orgId": "org",
-  "name": "org",
-  "EIN": "123456",
+  "orgId": "newOrg",
+  "name": "new org",
+  "EIN": "12345678",
   "category": "animal",
-  "email": "org@gmail.com",
+  "email": "neworg@gmail.com",
   "phone": "123456789",
   "location": "Stony Brook",
-  "website": "org.com",
-  "approved": "false"
+  "website": "org.com"
 }
+
 
 ### Organization Authentication Form UPDATE
 
