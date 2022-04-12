@@ -17,9 +17,8 @@ POST http://localhost:4000/api/v1/user/login HTTP/1.1
 content-type: application/json
 
 {
-  "email": "donor2@gmail.com",
-  "password": "password",
-  "role": "donor"
+  "email": "donor7@gmail.com",
+  "password": "password"
 }
 
 ### GET LOGGEDIN
@@ -76,7 +75,7 @@ content-type: application/json
 
 {
   "orgId": "org",
-  "name": "organization updated",
+  "name": "organization again updated",
   "website": "org.com"
 }
 
@@ -87,4 +86,16 @@ content-type: application/json
 
 {
   "orgId": "org"
+}
+
+
+### Update User (Donor and Organization)
+
+POST http://localhost:4000/api/v1/user HTTP/1.1
+content-type: application/json
+
+{
+  "username": "newOrg",
+  "email": "neworg@gmail.com",
+  "role": "organization"
 }

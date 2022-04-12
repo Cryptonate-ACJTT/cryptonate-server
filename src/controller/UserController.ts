@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
-import { donorModel } from "../models/DonorModel";
-import { organizationModel } from "../models/OrganizationModel";
+import {Request, Response} from "express";
+import {donorModel} from "../models/DonorModel";
+import {organizationModel} from "../models/OrganizationModel";
 import * as auth from "../middleware/auth";
 import bcrypt from "bcryptjs";
 import User from "../models/interface/User";
 import ROLE from "../models/Role";
-import { adminModel } from "../models/AdminModel";
-import { AuthForm, authFormModel } from "../models/AuthFormModel";
+import {adminModel} from "../models/AdminModel";
+import {AuthForm, authFormModel} from "../models/AuthFormModel";
 
 /**
  * User Registration and assign JWT token
@@ -15,75 +15,75 @@ import { AuthForm, authFormModel } from "../models/AuthFormModel";
  * @return 200: return user 404: error
  */
 async function addUser(req: Request, res: Response) {
-  const { username, password, email, role } = req.body;
+    const {username, password, email, role} = req.body;
 
-  if (!username || !password || !email || !role)
-    return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
+    if (!username || !password || !email || !role)
+        return res.status(404).json({status: "ERROR", msg: "Parameter missing"});
 
-  // Check if it's a valid role type
-  if (!Object.values(ROLE).includes(role) || role === ROLE.ADMIN) {
-    return res.status(404).json({
-      status: "ERROR",
-      msg: "Undefined Role! If trying to register as admin, Don't",
-    });
-  }
+    // Check if it's a valid role type
+    if (!Object.values(ROLE).includes(role) || role === ROLE.ADMIN) {
+        return res.status(404).json({
+            status: "ERROR",
+            msg: "Undefined Role! If trying to register as admin, Don't",
+        });
+    }
 
-  // CHECK IF USER ALREADY EXISTS BY THE email
-  const existingUser =
+    // CHECK IF USER ALREADY EXISTS BY THE email
+    const existingUser =
+        role === ROLE.DONOR
+            ? await donorModel.findOne({email})
+            : await organizationModel.findOne({email});
+
+    if (existingUser)
+        return res.status(400).json({
+            status: "ERROR",
+            msg: `User already exists by the email: ${email}`,
+        });
+
+    const saltRounds = 10;
+    const salt = await bcrypt.genSalt(saltRounds);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    let user: User;
+
     role === ROLE.DONOR
-      ? await donorModel.findOne({ email })
-      : await organizationModel.findOne({ email });
+        ? (user = new donorModel({
+            username,
+            password: passwordHash,
+            email,
+            role,
+        }))
+        : (user = new organizationModel({
+            username,
+            password: passwordHash,
+            email,
+            role,
+        }));
 
-  if (existingUser)
-    return res.status(400).json({
-      status: "ERROR",
-      msg: `User already exists by the email: ${email}`,
-    });
+    if (!user)
+        return res.status(404).json({status: "ERROR", msg: "Parameter missing"});
 
-  const saltRounds = 10;
-  const salt = await bcrypt.genSalt(saltRounds);
-  const passwordHash = await bcrypt.hash(password, salt);
+    await user.save();
 
-  let user: User;
+    // LOGIN THE USER
+    const token = auth.signToken(user);
 
-  role === ROLE.DONOR
-    ? (user = new donorModel({
-        username,
-        password: passwordHash,
-        email,
-        role,
-      }))
-    : (user = new organizationModel({
-        username,
-        password: passwordHash,
-        email,
-        role,
-      }));
-
-  if (!user)
-    return res.status(404).json({ status: "ERROR", msg: "Parameter missing" });
-
-  await user.save();
-
-  // LOGIN THE USER
-  const token = auth.signToken(user);
-
-  // RETURN USER WITH PARTIAL DATA
-  res
-    .cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    })
-    .status(200)
-    .json({
-      status: "OK",
-      user: {
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    // RETURN USER WITH PARTIAL DATA
+    res
+        .cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        })
+        .status(200)
+        .json({
+            status: "OK",
+            user: {
+                username: user.username,
+                email: user.email,
+                role: user.role,
+            },
+        });
 }
 
 /**
@@ -95,173 +95,179 @@ async function addUser(req: Request, res: Response) {
  * @return login user otherwise error response
  */
 async function login(req: Request, res: Response) {
-  let user: User | null;
-  const { email, password, role } = req.body;
+    let user: User | null;
+    const {email, password} = req.body;
 
-  // CHECK IF USER IN THE DATABASE
-  try {
-    if (role === ROLE.ADMIN) user = await adminModel.findOne({ email });
-    else if (role === ROLE.DONOR) user = await donorModel.findOne({ email });
-    else user = await organizationModel.findOne({ email });
-  } catch (err) {
-    console.log(`Error occured finding user: ${email}`);
-    return res.status(404).json({
-      status: "ERROR",
-      msg: "Login failed. Check email or password",
-    });
-  }
-
-  // COMPARE THE PASSWORD
-  try {
-    if (user && (await bcrypt.compare(password, user.password))) {
-      const token = auth.signToken(user);
-      return res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-        })
-        .status(200)
-        .json({
-          status: "OK",
-          user: {
-            username: user.username,
-            email: user.email,
-            role: user.role,
-          },
-          msg: "User login success",
+    // CHECK IF USER IN THE DATABASE
+    try {
+        if (await donorModel.exists({email})) {
+            user = await donorModel.findOne({email});
+        } else if (await organizationModel.exists({email})) {
+            user = await organizationModel.findOne({email});
+        } else {
+            user = await adminModel.findOne({email});
+        }
+    } catch (err) {
+        console.log(`Error occurred finding user: ${email}`);
+        return res.status(404).json({
+            status: "ERROR",
+            msg: "Login failed. Check email or password",
         });
     }
-  } catch (err) {
-    console.log(`Error occurred during bcrypt password comparison`);
-  }
 
-  // AT THIS POINT, RETURN ERROR
-  return res.status(404).json({
-    status: "ERROR",
-    msg: "Login failed. Check username or password",
-  });
+    // COMPARE THE PASSWORD
+    try {
+        if (user && (await bcrypt.compare(password, user.password))) {
+            const token = auth.signToken(user);
+            return res
+                .cookie("token", token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "none",
+                })
+                .status(200)
+                .json({
+                    status: "OK",
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        role: user.role,
+                    },
+                    msg: "User login success",
+                });
+        }
+    } catch (err) {
+        console.log(`Error occurred during bcrypt password comparison`);
+    }
+
+    // AT THIS POINT, RETURN ERROR
+    return res.status(404).json({
+        status: "ERROR",
+        msg: "Login failed. Check username or password",
+    });
 }
 
 function logout(req: Request, res: Response) {
-  try {
-    res
-      .cookie("token", "", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-      })
-      .status(200)
-      .json({
-        success: true,
-        status: "OK",
-      })
-      .send();
-  } catch (err) {
-    console.log(err);
-    return res
-      .status(500)
-      .json({ status: "ERROR", msg: "Error while logging out" });
-  }
+    try {
+        res
+            .cookie("token", "", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            })
+            .status(200)
+            .json({
+                success: true,
+                status: "OK",
+            })
+            .send();
+    } catch (err) {
+        console.log(err);
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: "Error while logging out"});
+    }
 }
 
 async function getLoggedIn(req: Request, res: Response) {
-  const userRole = req.body.role;
-  console.log("username: ", req.body.username);
-  console.log("role: ", req.body.role);
-  // const isVerified = auth.verify(req, res);
-  // if (!isVerified) {
-  //     return res.status(401).json({
-  //         loggedIn: false,
-  //         user: null,
-  //         status: "ERROR",
-  //         msg: "User is not verified",
-  //     });
-  // }
-  try {
-    const loggedInUser =
-      userRole === ROLE.DONOR
-        ? await donorModel.findOne({ username: req.body.username })
-        : await organizationModel.findOne({ username: req.body.username });
-    return res.status(200).json({
-      loggedIn: true,
-      user: {
-        username: loggedInUser.username,
-        email: loggedInUser.email,
-        role: loggedInUser.role,
-      },
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({
-      loggedIn: false,
-      user: null,
-      status: "ERROR",
-      msg: "Error getting user",
-    });
-  }
+    const userRole = req.body.role;
+    console.log("username: ", req.body.username);
+    console.log("role: ", req.body.role);
+    // const isVerified = auth.verify(req, res);
+    // if (!isVerified) {
+    //     return res.status(401).json({
+    //         loggedIn: false,
+    //         user: null,
+    //         status: "ERROR",
+    //         msg: "User is not verified",
+    //     });
+    // }
+    try {
+        const loggedInUser =
+            userRole === ROLE.DONOR
+                ? await donorModel.findOne({username: req.body.username})
+                : await organizationModel.findOne({username: req.body.username});
+        return res.status(200).json({
+            loggedIn: true,
+            user: {
+                id: loggedInUser.id,
+                username: loggedInUser.username,
+                email: loggedInUser.email,
+                role: loggedInUser.role,
+            },
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            loggedIn: false,
+            user: null,
+            status: "ERROR",
+            msg: "Error getting user",
+        });
+    }
 }
 
 /**
  * @brief - Form for authenticating organization
  */
 async function submitOrgAuthenticationForm(req: Request, res: Response) {
-  const {
-    orgId,
-    name,
-    EIN,
-    category,
-    email,
-    phone,
-    location,
-    website,
-    approved,
-  } = req.body;
+    const {
+        orgId,
+        name,
+        EIN,
+        category,
+        email,
+        phone,
+        location,
+        website,
+        approved,
+    } = req.body;
 
-  // CHECK IF ALL FIELDS ARE VALID
-  if (
-    !orgId ||
-    !name ||
-    !EIN ||
-    !category ||
-    !email ||
-    !phone ||
-    !location ||
-    !website
-  ) {
-    return res
-      .status(404)
-      .json({ status: "ERROR", msg: `Field missing from the form` });
-  }
-
-  let newOrg;
-  try {
-    // CHECK IF THE FORM EXIST FOR THE REQUESTED ORGANIZATION
-    const formExists = await authFormModel.find({ orgId });
-    if (formExists.length > 0) {
-      return res.status(409).json({
-        status: "ERROR",
-        msg: "The form already exists for this organization!",
-      });
+    // CHECK IF ALL FIELDS ARE VALID
+    if (
+        !orgId ||
+        !name ||
+        !EIN ||
+        !category ||
+        !email ||
+        !phone ||
+        !location ||
+        !website
+    ) {
+        return res
+            .status(404)
+            .json({status: "ERROR", msg: `Field missing from the form`});
     }
-    newOrg = new authFormModel({
-      orgId,
-      name,
-      EIN,
-      category,
-      email,
-      phone,
-      location,
-      website,
-    });
-    await newOrg.save();
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ status: "ERROR", msg: `Error saving the form to the database` });
-  }
 
-  res.status(201).json({ status: "SUCCESS", msg: "Form successfully saved!" });
+    let newOrg;
+    try {
+        // CHECK IF THE FORM EXIST FOR THE REQUESTED ORGANIZATION
+        const formExists = await authFormModel.find({orgId});
+        if (formExists.length > 0) {
+            return res.status(409).json({
+                status: "ERROR",
+                msg: "The form already exists for this organization!",
+            });
+        }
+        newOrg = new authFormModel({
+            orgId,
+            name,
+            EIN,
+            category,
+            email,
+            phone,
+            location,
+            website,
+        });
+        await newOrg.save();
+    } catch (err) {
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Error saving the form to the database`});
+    }
+
+    res.status(201).json({status: "SUCCESS", msg: "Form successfully saved!"});
 }
 
 /**
@@ -271,39 +277,39 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
  * orgId -> username for organization (can't be updated)
  */
 async function editOrgAuthenticationForm(req: Request, res: Response) {
-  const { orgId, name, EIN, category, email, phone, location, website } =
-    req.body;
+    const {orgId, name, EIN, category, email, phone, location, website} =
+        req.body;
 
-  if (!orgId)
-    return res
-      .status(404)
-      .json({
-        status: "ERROR",
-        msg: `Provide orgId (username for organization)`,
-      });
+    if (!orgId)
+        return res
+            .status(404)
+            .json({
+                status: "ERROR",
+                msg: `Provide orgId (username for organization)`,
+            });
 
-  // const orgForm: Array<AuthForm> = await authFormModel.find({orgId});
-  const orgForm: AuthForm | null = await authFormModel.findOne({ orgId });
-  if (!orgForm)
-    return res
-      .status(500)
-      .json({ status: "ERROR", msg: `Organization not found` });
+    // const orgForm: Array<AuthForm> = await authFormModel.find({orgId});
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
 
-  if (name) orgForm.name = name;
-  if (EIN) orgForm.EIN = EIN;
-  if (category) orgForm.category = category;
-  if (email) orgForm.email = email;
-  if (phone) orgForm.phone = phone;
-  if (location) orgForm.location = location;
-  if (website) orgForm.website = website;
+    if (name) orgForm.name = name;
+    if (EIN) orgForm.EIN = EIN;
+    if (category) orgForm.category = category;
+    if (email) orgForm.email = email;
+    if (phone) orgForm.phone = phone;
+    if (location) orgForm.location = location;
+    if (website) orgForm.website = website;
 
-  await orgForm.save();
+    await orgForm.save();
 
-  return res.status(200).json({
-    status: "OK",
-    msg: "Update Successful",
-    form: orgForm,
-  });
+    return res.status(200).json({
+        status: "OK",
+        msg: "Update Successful",
+        form: orgForm,
+    });
 }
 
 /**
@@ -312,35 +318,75 @@ async function editOrgAuthenticationForm(req: Request, res: Response) {
  * @param res
  */
 async function getOrgAuthenticationForm(req: Request, res: Response) {
-  const { orgId } = req.body;
-  if (!orgId)
-    return res
-      .status(404)
-      .json({
-        status: "ERROR",
-        msg: `Provide orgId (username for organization)`,
-      });
+    const {orgId} = req.body;
+    if (!orgId)
+        return res
+            .status(404)
+            .json({
+                status: "ERROR",
+                msg: `Provide orgId (username for organization)`,
+            });
 
-  const orgForm: AuthForm | null = await authFormModel.findOne({ orgId });
+    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
 
-  if (!orgForm)
-    return res
-      .status(500)
-      .json({ status: "ERROR", msg: `Organization not found` });
+    if (!orgForm)
+        return res
+            .status(500)
+            .json({status: "ERROR", msg: `Organization not found`});
 
-  return res.status(200).json({
-    status: "OK",
-    msg: "Found Form",
-    form: orgForm,
-  });
+    return res.status(200).json({
+        status: "OK",
+        msg: "Found Form",
+        form: orgForm,
+    });
+}
+
+async function updateUser(req: Request, res: Response) {
+    const {username, email, role} = req.body;
+    if (!role) {
+        return res
+            .status(404)
+            .json({
+                status: "ERROR",
+                msg: `Please provide the role of this user: ${email}`,
+            });
+    }
+    let user: User | null;
+    try {
+        if (role == ROLE.DONOR) {
+            user = await donorModel.findOne({email});
+        } else {
+            user = await organizationModel.findOne({email});
+        }
+    } catch (e) {
+        return res.status(404).json({
+            status: "ERROR",
+            msg: "User doesn't exist. Please check again.",
+        });
+    }
+
+    if (user && username)
+        user.username = username;
+    if (user && email)
+        user.email = email;
+
+    try {
+        await user?.save()
+    } catch (err) {
+        return res.status(500).json({
+            status: "ERROR",
+            msg: "Error saving user. Check if user is null",
+        });
+    }
 }
 
 export {
-  addUser,
-  login,
-  logout,
-  getLoggedIn,
-  submitOrgAuthenticationForm,
-  editOrgAuthenticationForm,
-  getOrgAuthenticationForm,
+    addUser,
+    login,
+    logout,
+    getLoggedIn,
+    submitOrgAuthenticationForm,
+    editOrgAuthenticationForm,
+    getOrgAuthenticationForm,
+    updateUser
 };
