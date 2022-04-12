@@ -11,6 +11,7 @@ interface User extends mongoose.Document {
   password: string;
   email: string;
   role: string;
+  projects: object;
 }
 
 export default User;

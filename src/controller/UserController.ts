@@ -133,6 +133,7 @@ async function login(req: Request, res: Response) {
                         username: user.username,
                         email: user.email,
                         role: user.role,
+                        projects: user.projects
                     },
                     msg: "User login success",
                 });
@@ -195,6 +196,7 @@ async function getLoggedIn(req: Request, res: Response) {
                 username: loggedInUser.username,
                 email: loggedInUser.email,
                 role: loggedInUser.role,
+                projects: loggedInUser.projects
             },
         });
     } catch (err) {
