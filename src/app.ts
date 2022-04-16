@@ -1,9 +1,13 @@
 import "dotenv/config";
 import { connection } from "./db/dbconfig";
+import { KeyDaemonClient } from "./middleware/crypto";
 import createServer from "./util/server";
 
 const app = createServer();
 const PORT = parseInt(process.env.PORT as string) || 4000; // Type assert to string
+
+// KEYDAEMON INIG
+KeyDaemonClient.getInstance();
 
 // DB SETUP
 connection.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));
