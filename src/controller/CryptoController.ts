@@ -5,7 +5,23 @@ import User from "../models/interface/User";
 import { organizationModel } from "../models/OrganizationModel";
 import ROLE from "../models/Role";
 
+const responder = (res: Response, code: number, status: string, msg: string) => {
+	return res.status(code).json({
+		status: status,
+		msg: msg
+	})
+}
+
+const fourohfour = (res: Response, msg: string) => {
+	return responder(res, 404, "ERROR", msg);
+}
+
+const twohundred = (res: Response, msg: string) => {
+	return responder(res, 200, "OK", msg);
+}
+
 /**
+ * Pull a wallet from the ether
  * @param req.body - {username, email, role}
  * @param req 
  * @param res 
@@ -81,6 +97,12 @@ const createNewWallet = async (req: Request, res: Response) => {
 	});	
 }
 
+/**
+ * Check the account balance of an address!
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 const checkAccountBalace = async (req: Request, res: Response) => {
 	let {address} = req.body;
 
@@ -100,8 +122,35 @@ const checkAccountBalace = async (req: Request, res: Response) => {
 	return res.status(404).json({status: "ERROR", msg: "Problems retrieving account balance!"});
 }
 
+
+const basicTxn = async (req: Request, res: Response) => {
+	let user: User | null;
+	let {email, role, wallet, sender, receiver, amount} = req.body;
+	
+	if(!role) {
+		return responder(res, 404, "ERROR", "NO ROLE");
+	}
+
+	// does the user exist?
+	try {
+		if(role == ROLE.DONOR) {
+			user = await donorModel.findOne({email});
+		} else {
+			user = await organizationModel.findOne({email});
+		}
+	} catch (e) {
+		return responder(res, 404, "ERROR", "USER DOESN'T EXIST");
+	}
+
+	if(user) {
+		await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
+	}
+}
+
 export {
 	createNewWallet,
 
-	checkAccountBalace
+	checkAccountBalace,
+
+	basicTxn
 }
