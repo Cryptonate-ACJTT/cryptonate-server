@@ -8,7 +8,7 @@ const OrganizationSchema: Schema = new Schema<User>(
         password: {type: String, required: true},
         email: {type: String, required: true},
         role: {type: String, required: true},
-		wallet: {type: String, required: false},
+		wallet: {type: Object, required: false},
         projects: {type: [ProjectSchema], default: []}
     },
     {

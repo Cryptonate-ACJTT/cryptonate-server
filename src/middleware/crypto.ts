@@ -43,7 +43,7 @@ const TOKENS = {
 		return KeyDaemonClient.instance;
 	}
 
-	public static getInstance() {
+	public static getInstance = () => {
 		if(!KeyDaemonClient.instance) {
 			new KeyDaemonClient();
 		}
@@ -64,13 +64,57 @@ const TOKENS = {
 
 	
 	public static getWalletHandle = async (walletID: string, password: string) => {
-		let walletHandle = (await KeyDaemonClient.client.initWalletHandle(walletID, password)).wallet_handle_id;
+		let walletHandle = (await KeyDaemonClient.client.initWalletHandle(walletID, password)).wallet_handle_token;
 		return walletHandle;
+	}
+
+	public static freeWalletHandle = async (walletHandle: string) => {
+		return KeyDaemonClient.client.releaseWalletHandle(walletHandle);
 	}
 
 
 	public static newAddress = async (walletHandle: string) => {
 		let walletAddress = (await KeyDaemonClient.client.generateKey(walletHandle)).address;
 		return walletAddress;
+	}
+
+
+	public static newAddressFromID = async (walletID: string, password: string) => {
+		let handle = await KeyDaemonClient.getWalletHandle(walletID, password);
+		let address = await KeyDaemonClient.newAddress(handle);
+		await KeyDaemonClient.freeWalletHandle(handle);
+
+		return address;
+	}
+}
+
+
+/**
+ * Client for accessing Algorand
+ */
+export class CryptoClient {
+	private static instance: CryptoClient;
+	private static client: algosdk.Algodv2;
+
+	private constructor() {
+		if(!CryptoClient.instance) {
+			CryptoClient.instance = this;
+			CryptoClient.client = new algosdk.Algodv2(TOKENS.ALGORAND, SERVER, PORTS.ALGORAND);
+		}
+
+		return CryptoClient.instance;
+	}
+
+	public static getInstance = () => {
+		if(!CryptoClient.instance) {
+			new CryptoClient();
+		}
+
+		return CryptoClient.instance;
+	}
+
+	public static getBalance = async (address: string) => {
+		let info = await CryptoClient.client.accountInformation(address).do();
+		return info;
 	}
 }

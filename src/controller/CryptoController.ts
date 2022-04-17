@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { KeyDaemonClient } from "../middleware/crypto";
+import { CryptoClient, KeyDaemonClient } from "../middleware/crypto";
 import { donorModel } from "../models/DonorModel";
 import User from "../models/interface/User";
 import { organizationModel } from "../models/OrganizationModel";
@@ -38,7 +38,13 @@ const createNewWallet = async (req: Request, res: Response) => {
 	// create a wallet if none
 	if(user) {
 		if(!user.wallet) {
-			user.wallet = await KeyDaemonClient.newWallet(user.username, user.password)
+			let walletID = await KeyDaemonClient.newWallet(user.username, user.password);
+			user.wallet = {
+				id: walletID,
+				accounts: [
+					await KeyDaemonClient.newAddressFromID(walletID, user.password)
+				]
+			}
 		} else {
 			return res.status(200).json({
 				status: "OK",
@@ -75,6 +81,27 @@ const createNewWallet = async (req: Request, res: Response) => {
 	});	
 }
 
+const checkAccountBalace = async (req: Request, res: Response) => {
+	let {address} = req.body;
+
+	if(!address)
+		return res.status(404).json({status: "ERROR", msg: "No id provided"});
+	
+	let balance = await CryptoClient.getBalance(address);
+
+	if(balance) {
+		return res.status(200).json({
+			status: "OK",
+			msg: `Balance successfully retrieved for ${address}`,
+			balance: balance
+		});
+	}
+
+	return res.status(404).json({status: "ERROR", msg: "Problems retrieving account balance!"});
+}
+
 export {
-	createNewWallet
+	createNewWallet,
+
+	checkAccountBalace
 }
