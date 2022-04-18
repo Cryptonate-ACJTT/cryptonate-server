@@ -220,4 +220,14 @@ export class CryptoClient {
 
 		return false;
 	}
+
+	/*
+	public static fundNewAccountForTesting = async (walletID: string, password: string, receiver: string) => {
+		const masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
+		const testAmt = 1000000;
+		let txID = await CryptoClient.basicTransaction(walletID, password, masterAcc, receiver, "", testAmt);
+
+		return await CryptoClient.confirmTransaction(txID);
+	}
+	*/
 }

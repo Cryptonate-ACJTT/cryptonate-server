@@ -21,6 +21,9 @@ const twohundred = (res: Response, msg: string, json: Object) => {
 	return responder(res, 200, "OK", msg, json);
 }
 
+
+
+
 /**
  * Pull a wallet from the ether
  * @param req.body - {username, email, role}
@@ -61,7 +64,7 @@ const createNewWallet = async (req: Request, res: Response) => {
 				accounts: [await KeyDaemonClient.newAddressFromID(walletID, user.password)]
 			};
 
-			console.log(user.wallet);
+			
 			/*{
 				id: walletID,
 				accounts: [
@@ -104,6 +107,8 @@ const createNewWallet = async (req: Request, res: Response) => {
 	});	
 }
 
+
+
 /**
  * Check the account balance of an address!
  * @param req 
@@ -118,7 +123,8 @@ const checkAccountBalace = async (req: Request, res: Response) => {
 	
 	let balance = await CryptoClient.getBalance(address);
 
-	if(balance) {
+
+	if(balance >= 0) {
 		return res.status(200).json({
 			status: "OK",
 			msg: `Balance successfully retrieved for ${address}`,
@@ -128,6 +134,8 @@ const checkAccountBalace = async (req: Request, res: Response) => {
 
 	return res.status(404).json({status: "ERROR", msg: "Problems retrieving account balance!"});
 }
+
+
 
 
 const basicTxn = async (req: Request, res: Response) => {
@@ -157,6 +165,9 @@ const basicTxn = async (req: Request, res: Response) => {
 		});
 	}
 }
+
+
+
 
 /**
  * Create a new wallet address
