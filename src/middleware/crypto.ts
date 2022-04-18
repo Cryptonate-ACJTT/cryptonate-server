@@ -29,6 +29,11 @@ const TOKENS = {
 }
 
 /**
+ * Rounds to wait for algodv2 to timeout	
+ */
+const DEFAULT_TIMEOUT = 10;
+
+/**
  * Client for the Key Management Daemon.
  */
  export class KeyDaemonClient {
@@ -132,6 +137,8 @@ const TOKENS = {
 }
 
 
+
+
 /**
  * Client for accessing Algorand
  */
@@ -143,6 +150,7 @@ export class CryptoClient {
 		if(!CryptoClient.instance) {
 			CryptoClient.instance = this;
 			CryptoClient.client = new algosdk.Algodv2(TOKENS.ALGORAND, SERVER, PORTS.ALGORAND);
+
 		}
 
 		return CryptoClient.instance;
@@ -167,24 +175,49 @@ export class CryptoClient {
 	 */
 	public static getBalance = async (address: string) => {
 		let info = await CryptoClient.client.accountInformation(address).do();
-		console.log(info);
 		return info.amount;
 	}
 
 
+	/**
+	 * Sends a basic transaction from sender to receiver with amount
+	 * @param walletID 
+	 * @param password 
+	 * @param sender 
+	 * @param receiver 
+	 * @param note 
+	 * @param amount 
+	 * @returns 
+	 */
 	public static basicTransaction = async (walletID: string, password: string, sender: string, receiver: string, note: string, amount: number) => {
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
+
+		if(note === "") {
+			note = "MUYzRjMgRkUwRiAyMDBEIDI2QTcgRkUwRg==";
+		}
+
 		let txn = await algosdk.makePaymentTxnWithSuggestedParams(sender, receiver, amount, undefined, new TextEncoder().encode(note), txnParams);
-		
-		// console.log(txn);
-		// need to get account sk
-		let skey = new Uint8Array((await KeyDaemonClient.getAccountKey(walletID, password, sender)).private_key);
-		console.log(new Uint8Array(skey));
-		let signedTxn = txn.signTxn(skey);
+		let sKey = new Uint8Array((await KeyDaemonClient.getAccountKey(walletID, password, sender)).private_key);
+		let signedTxn = txn.signTxn(sKey);
 		let txID = txn.txID();
 
-		await CryptoClient.client.sendRawTransaction(signedTxn);
+		await CryptoClient.client.sendRawTransaction(signedTxn).do();
+
+		return txID;
 	}
 
 
+	/**
+	 * waits for the transaction to be confirmed or rejected, returns true/false
+	 * @param txID transaction id
+	 * @returns 
+	 */
+	public static confirmTransaction = async (txID: string) => {
+		let confirmed = await algosdk.waitForConfirmation(CryptoClient.client, txID, DEFAULT_TIMEOUT);
+		if(confirmed["confirmed-round"] > 0) {
+			return true;
+		}
+
+		return false;
+	}
 }

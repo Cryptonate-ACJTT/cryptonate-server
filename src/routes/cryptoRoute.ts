@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/newWallet", verify, CryptoController.createNewWallet);
 router.post("/balance", CryptoController.checkAccountBalace);
-router.post("/txn/basic", CryptoController.basicTxn);
+
+router.post("/txn/basic", verify, CryptoController.basicTxn);
 
 export {router as CryptoRouter};

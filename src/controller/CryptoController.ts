@@ -5,19 +5,20 @@ import User from "../models/interface/User";
 import { organizationModel } from "../models/OrganizationModel";
 import ROLE from "../models/Role";
 
-const responder = (res: Response, code: number, status: string, msg: string) => {
+const responder = (res: Response, code: number, status: string, msg: string, json: Object) => {
 	return res.status(code).json({
 		status: status,
-		msg: msg
+		msg: msg,
+		...json
 	})
 }
 
-const fourohfour = (res: Response, msg: string) => {
-	return responder(res, 404, "ERROR", msg);
+const fourohfour = (res: Response, msg: string, json: Object) => {
+	return responder(res, 404, "ERROR", msg, json);
 }
 
-const twohundred = (res: Response, msg: string) => {
-	return responder(res, 200, "OK", msg);
+const twohundred = (res: Response, msg: string, json: Object) => {
+	return responder(res, 200, "OK", msg, json);
 }
 
 /**
@@ -57,10 +58,16 @@ const createNewWallet = async (req: Request, res: Response) => {
 			let walletID = await KeyDaemonClient.newWallet(user.username, user.password);
 			user.wallet = {
 				id: walletID,
+				accounts: [await KeyDaemonClient.newAddressFromID(walletID, user.password)]
+			};
+
+			console.log(user.wallet);
+			/*{
+				id: walletID,
 				accounts: [
 					await KeyDaemonClient.newAddressFromID(walletID, user.password)
 				]
-			}
+			}*/
 		} else {
 			return res.status(200).json({
 				status: "OK",
@@ -128,7 +135,7 @@ const basicTxn = async (req: Request, res: Response) => {
 	let {email, role, wallet, sender, receiver, amount} = req.body;
 	
 	if(!role) {
-		return responder(res, 404, "ERROR", "NO ROLE");
+		return responder(res, 404, "ERROR", "NO ROLE", {});
 	}
 
 	// does the user exist?
@@ -139,13 +146,57 @@ const basicTxn = async (req: Request, res: Response) => {
 			user = await organizationModel.findOne({email});
 		}
 	} catch (e) {
-		return responder(res, 404, "ERROR", "USER DOESN'T EXIST");
+		return responder(res, 404, "ERROR", "USER DOESN'T EXIST", {});
 	}
 
 	if(user) {
-		await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
+		let txID = await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
+		return twohundred(res, `Transaction ${txID} submitted`, {
+			txID: txID,
+			confirmation: await CryptoClient.confirmTransaction(txID)
+		});
 	}
 }
+
+/**
+ * Create a new wallet address
+ * @param req 
+ * @param res 
+ * @returns 
+ */
+const createNewAddress = async(req: Request, res: Response) => {
+	let user: User | null;
+	let {email, role, wallet} = req.body;
+	
+	if(!role) {
+		return responder(res, 404, "ERROR", "NO ROLE", {});
+	}
+
+	try {
+		if(role == ROLE.DONOR) {
+			user = await donorModel.findOne({email});
+		} else {
+			user = await organizationModel.findOne({email});
+		}
+	} catch (e) {
+		return responder(res, 404, "ERROR", "USER DOESN'T EXIST", {});
+	}
+
+	if(user) {
+		let address = await KeyDaemonClient.newAddressFromID(wallet, user.password);
+		user.wallet.accounts.push(address);
+	}
+
+	try {
+		await user?.save();
+	} catch(e) {
+		return res.status(500).json({
+			status: "ERROR",
+			msg: "Error saving user."
+		});
+	}
+}
+
 
 export {
 	createNewWallet,

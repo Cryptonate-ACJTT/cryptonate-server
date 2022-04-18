@@ -1,6 +1,7 @@
 import {model, Schema} from "mongoose";
 import User from "./interface/User";
 import {ProjectSchema} from "./ProjectModel";
+import { WalletSchema } from "./WalletModel";
 
 const OrganizationSchema: Schema = new Schema<User>(
     {
@@ -8,7 +9,7 @@ const OrganizationSchema: Schema = new Schema<User>(
         password: {type: String, required: true},
         email: {type: String, required: true},
         role: {type: String, required: true},
-		wallet: {type: Object, required: false},
+		wallet: {type: WalletSchema, required: true},
         projects: {type: [ProjectSchema], default: []}
     },
     {

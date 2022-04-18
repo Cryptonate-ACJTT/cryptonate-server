@@ -7,6 +7,7 @@ import User from "../models/interface/User";
 import ROLE from "../models/Role";
 import {adminModel} from "../models/AdminModel";
 import {AuthForm, authFormModel} from "../models/AuthFormModel";
+import { KeyDaemonClient } from "../middleware/crypto";
 
 /**
  * User Registration and assign JWT token
@@ -46,18 +47,29 @@ async function addUser(req: Request, res: Response) {
 
     let user: User;
 
+	let walletID = await KeyDaemonClient.newWallet(username, passwordHash);
+	let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
+
     role === ROLE.DONOR
         ? (user = new donorModel({
             username,
             password: passwordHash,
             email,
             role,
+			wallet: {
+				id: walletID,
+				accounts: [newAccount]
+			}
         }))
         : (user = new organizationModel({
             username,
             password: passwordHash,
             email,
             role,
+			wallet:  {
+				id: walletID,
+				accounts: [newAccount]
+			}
         }));
 
     if (!user)
@@ -82,7 +94,10 @@ async function addUser(req: Request, res: Response) {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-				wallet: user.wallet
+				wallet: {
+					id: user.wallet.id,
+					accounts: user.wallet.accounts
+				},
             },
         });
 }
@@ -120,6 +135,7 @@ async function login(req: Request, res: Response) {
     try {
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = auth.signToken(user);
+			console.log(user);
             return res
                 .cookie("token", token, {
                     httpOnly: true,
@@ -134,7 +150,10 @@ async function login(req: Request, res: Response) {
                         username: user.username,
                         email: user.email,
                         role: user.role,
-						wallet: user.wallet,
+						wallet: {
+							id: user.wallet.id,
+							accounts: user.wallet.accounts
+						},
                         projects: user.projects
                     },
                     msg: "User login success",
@@ -198,7 +217,10 @@ async function getLoggedIn(req: Request, res: Response) {
                 username: loggedInUser.username,
                 email: loggedInUser.email,
                 role: loggedInUser.role,
-				wallet: loggedInUser.wallet,
+				wallet: {
+					id: loggedInUser.wallet.id,
+					accounts: loggedInUser.wallet.accounts
+				},
                 projects: loggedInUser.projects
             },
         });

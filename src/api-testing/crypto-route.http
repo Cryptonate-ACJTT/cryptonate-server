@@ -1,0 +1,14 @@
+
+
+
+POST http://localhost:4000/api/v1/crypto/txn/basic HTTP/1.1
+content-type: application/json
+
+{
+	"email": "user1@gmail.com",
+	"role": "donor",
+	"wallet": "c261a960b06d7417d2b2ed86ca4d26a5",
+	"sender": "37JB7ZQPLLYVKKV2WFKQILG4DOW6ZC2FOCZFR66QCHXBHLXYH23UA2RKVQ",
+	"receiver": "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE",
+	"amount": 10000
+}

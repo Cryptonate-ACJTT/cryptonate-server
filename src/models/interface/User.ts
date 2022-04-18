@@ -11,7 +11,10 @@ interface User extends mongoose.Document {
   password: string;
   email: string;
   role: string;
-  wallet: object;
+  wallet: {
+	id: string;
+	accounts: Array<string>;
+  };
   projects: object;
 }
 
