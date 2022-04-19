@@ -11,7 +11,7 @@ interface Project extends Document {
     goalAmount: number
     totalSaved: number
 	projectOpen: boolean
-
+	address: string
 }
 
 const ProjectSchema: Schema = new Schema<Project>(
@@ -25,7 +25,8 @@ const ProjectSchema: Schema = new Schema<Project>(
         image: {type: String, required: true},
         goalAmount: {type: Number, required: true},               // goal coin value
         totalSaved: {type: Number, default: 0.0}, // current progress coin saved
-		projectOpen: {type: Boolean, default: true}
+		projectOpen: {type: Boolean, default: true},
+		address: {type: String, required: true}
     },
     {
         timestamps: true,

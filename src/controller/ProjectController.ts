@@ -4,6 +4,10 @@ import fs from "fs";
 import { promisify } from "util";
 import { Project, projectModel } from "../models/ProjectModel";
 import { donorModel } from "../models/DonorModel";
+import { KeyDaemonClient } from "../middleware/crypto";
+import { organizationModel } from "../models/OrganizationModel";
+import ROLE from "../models/Role";
+import User from "../models/interface/User";
 
 /**
  * Contains everything related to Explore page and Project page
@@ -18,6 +22,9 @@ const getSingleImage = (req: Request, res: Response) => {
   readStream.pipe(res);
 };
 
+
+
+
 /**
  * @brief - Request for adding a project to explore page
  */
@@ -30,9 +37,10 @@ async function createProject(req: Request, res: Response) {
     summary,
     solution,
     goalAmount,
-    projectOpen,
+	userInfo
   } = req.body;
 
+  console.log(req.body);
   // CHECK IF ALL FIELDS ARE VALID
   if (
     !orgName ||
@@ -48,6 +56,8 @@ async function createProject(req: Request, res: Response) {
       .status(404)
       .json({ status: "ERROR", msg: `Field missing from the form` });
   }
+
+
 
   console.log(req.file);
 
@@ -66,28 +76,66 @@ async function createProject(req: Request, res: Response) {
       .json({ status: "ERROR", msg: `Error saving the form to the database` });
   }
 
+
+  let user: User | null
+  let userData = JSON.parse(userInfo);
+  let email = userData.email;
+
+	try {
+		if(userData.role == ROLE.DONOR) {
+			user = await donorModel.findOne({email});
+		} else {
+			user = await organizationModel.findOne({email});
+		}
+	} catch (e) {
+		return res
+			.status(404)
+			.json({status: "ERROR", msg: "Trying to create a project with no user"})
+	}
+  
   // post image to server
   const file = req.file as Express.Multer.File;
   const result = await uploadFile(file);
   await unlinkFile(file.path); // DELETE THE FILE ONCE UPLOADED TO S3
 
-  const newProject: Project = new projectModel({
-    orgName,
-    projectName,
-    projectSubTitle,
-    category,
-    summary,
-    solution,
-    image: `/images/${result.Key}`,
-    goalAmount,
-  });
+  if(user) {
+	try {
+		const address = await KeyDaemonClient.newAddressFromID(user.wallet.id, user.password);
+		user.wallet.accounts.push(address);
 
-  await newProject.save();
-  res.status(201).json({ status: "SUCCESS", msg: "Form successfully saved!" });
+		const newProject: Project = new projectModel({
+			orgName,
+			projectName,
+			projectSubTitle,
+			category,
+			summary,
+			solution,
+			image: `/images/${result.Key}`,
+			goalAmount,
+			address: address
+		});
+
+		await newProject.save();
+
+		user.projects.push(newProject);
+
+		await user.save();
+
+		return res.status(201).json({ status: "SUCCESS", msg: "Form successfully saved!", project: newProject, wallet: user.wallet});
+	} catch(e) {
+		return res.status(500).json({
+			status: "ERROR",
+			msg: "Error saving user."
+		});
+	}
+	
+  } else {
+	  return res.status(404).json({status: "ERROR", msg: "problems saving project"});
+  }
 }
 
 /**
- * [GET] project by orgName(org username) and projectName
+ * [GET] project by id
  * Need to get an image which contains the path to the image so
  * just insert it to the image tag src=`<domain> + project.image
  * @param req

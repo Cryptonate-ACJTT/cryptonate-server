@@ -4,6 +4,7 @@
  */
 
 import mongoose from "mongoose";
+import { Project } from "../ProjectModel";
 
 interface User extends mongoose.Document {
   id: string;
@@ -15,7 +16,7 @@ interface User extends mongoose.Document {
 	id: string;
 	accounts: Array<string>;
   };
-  projects: object;
+  projects: Array<Project>
 }
 
 export default User;
