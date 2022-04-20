@@ -17,7 +17,7 @@ POST http://localhost:4000/api/v1/user/login HTTP/1.1
 content-type: application/json
 
 {
-  "email": "donor2@gmail.com",
+  "email": "org@gmail.com",
   "password": "password"
 }
 

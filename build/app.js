@@ -5,9 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const dbconfig_1 = require("./db/dbconfig");
+const crypto_1 = require("./middleware/crypto");
 const server_1 = __importDefault(require("./util/server"));
 const app = (0, server_1.default)();
 const PORT = parseInt(process.env.PORT) || 4000; // Type assert to string
+// KEYDAEMON INIG
+crypto_1.KeyDaemonClient.getInstance();
+// CRYPTO INIT
+crypto_1.CryptoClient.getInstance();
 // DB SETUP
 dbconfig_1.connection.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));
 app.listen(PORT, () => {
