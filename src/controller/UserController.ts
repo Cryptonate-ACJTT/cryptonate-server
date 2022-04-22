@@ -98,6 +98,7 @@ async function addUser(req: Request, res: Response) {
 					id: user.wallet.id,
 					accounts: user.wallet.accounts
 				},
+                projects:[]
             },
         });
 }
