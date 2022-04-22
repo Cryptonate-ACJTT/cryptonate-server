@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CryptoClient, KeyDaemonClient } from "../middleware/crypto";
+import { CryptoClient, IndexClient, KeyDaemonClient } from "../middleware/crypto";
 import { donorModel } from "../models/DonorModel";
 import User from "../models/interface/User";
 import { organizationModel } from "../models/OrganizationModel";
@@ -137,7 +137,12 @@ const checkAccountBalace = async (req: Request, res: Response) => {
 
 
 
-
+/**
+ * Send a basic transaction
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 const basicTxn = async (req: Request, res: Response) => {
 	let user: User | null;
 	let {email, role, wallet, sender, receiver, amount} = req.body;
@@ -209,10 +214,29 @@ const createNewAddress = async(req: Request, res: Response) => {
 }
 
 
+const getIndexData = async (req: Request, res: Response) => {
+	let {address} = req.body;
+	if(!address) {
+		return fourohfour(res, "No address given", {});
+	}
+
+	try {
+		let txnInfo = await IndexClient.getAccountTxnData(address);
+		console.log(txnInfo);
+
+		return twohundred(res, `Retrieved txns for ${address}: `, {txns: txnInfo});
+	} catch {
+		return fourohfour(res, "Some error occurred", {});
+	}
+}
+
+
 export {
 	createNewWallet,
 
 	checkAccountBalace,
 
-	basicTxn
+	basicTxn,
+
+	getIndexData
 }

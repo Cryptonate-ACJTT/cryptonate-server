@@ -9,4 +9,6 @@ router.post("/balance", CryptoController.checkAccountBalace);
 
 router.post("/txn/basic", verify, CryptoController.basicTxn);
 
+router.post("/index/account", CryptoController.getIndexData);
+
 export {router as CryptoRouter};

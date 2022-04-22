@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { connection } from "./db/dbconfig";
-import { CryptoClient, KeyDaemonClient } from "./middleware/crypto";
+import { CryptoClient, IndexClient, KeyDaemonClient } from "./middleware/crypto";
 import createServer from "./util/server";
 
 const app = createServer();
@@ -11,6 +11,10 @@ KeyDaemonClient.getInstance();
 
 // CRYPTO INIT
 CryptoClient.getInstance();
+
+
+// INDEXER INIT
+IndexClient.getInstance();
 
 // DB SETUP
 connection.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));

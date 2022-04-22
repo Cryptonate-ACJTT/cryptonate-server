@@ -20,6 +20,8 @@ const PORTS = {
 	INDEXER: 8980
 }
 
+const MICROS_IN_ONE_ALGO = 1000000;
+
 /**
  * Tokens for interacting with algosdkclients
  */
@@ -221,6 +223,24 @@ export class CryptoClient {
 		return false;
 	}
 
+	/**
+	 * Converts μAlgos to a full Algo value. There are 1000000 μAlgos in an Algo.
+	 * @param microAlgos 
+	 * @returns 
+	 */
+	public static convertFromMicros = (μAlgos: number) => {
+		return (μAlgos / MICROS_IN_ONE_ALGO);
+	}
+
+	/**
+	 * Converts a full Algo value to μAlgos. There are 1000000 μAlgos in an Algo.
+	 * @param fullAlgos 
+	 * @returns 
+	 */
+	public static convertToMicros = (algos: number) => {
+		return (algos * MICROS_IN_ONE_ALGO);
+	}
+
 	/*
 	public static fundNewAccountForTesting = async (walletID: string, password: string, receiver: string) => {
 		const masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
@@ -230,4 +250,46 @@ export class CryptoClient {
 		return await CryptoClient.confirmTransaction(txID);
 	}
 	*/
+}
+
+
+export class IndexClient {
+	private static instance: IndexClient;
+	private static client: algosdk.Indexer;
+
+	private constructor() {
+		if(!IndexClient.instance) {
+			IndexClient.instance = this;
+			IndexClient.client = new algosdk.Indexer("", SERVER, PORTS.INDEXER);
+
+		}
+
+		return IndexClient.instance;
+	}
+
+	/**
+	 * Singleton getInstance for getting the client; called in app.ts currently for initialization
+	 * @returns IndexClient
+	 */
+	public static getInstance = () => {
+		if(!IndexClient.instance) {
+			new IndexClient();
+		}
+
+		return IndexClient.instance;
+	}
+
+	public static getAccountTxnData = async (address: string) => {
+		let info = await IndexClient.client.searchForTransactions().address(address).do();
+
+		return info;
+	}
+
+
+	public static getAccByID = async (address: string, date: Date) => {
+		let info = await IndexClient.client.searchForTransactions().address(address).beforeTime(date.toISOString()).do()
+
+
+		console.log(info);
+	}
 }
