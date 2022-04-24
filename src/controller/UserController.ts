@@ -7,7 +7,9 @@ import User from "../models/interface/User";
 import ROLE from "../models/Role";
 import {adminModel} from "../models/AdminModel";
 import {AuthForm, authFormModel} from "../models/AuthFormModel";
-import { KeyDaemonClient } from "../middleware/crypto";
+import {KeyDaemonClient} from "../middleware/crypto";
+import fetch from "node-fetch";
+
 
 /**
  * User Registration and assign JWT token
@@ -47,8 +49,8 @@ async function addUser(req: Request, res: Response) {
 
     let user: User;
 
-	let walletID = await KeyDaemonClient.newWallet(username, passwordHash);
-	let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
+    let walletID = await KeyDaemonClient.newWallet(username, passwordHash);
+    let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
 
     role === ROLE.DONOR
         ? (user = new donorModel({
@@ -56,20 +58,20 @@ async function addUser(req: Request, res: Response) {
             password: passwordHash,
             email,
             role,
-			wallet: {
-				id: walletID,
-				accounts: [newAccount]
-			}
+            wallet: {
+                id: walletID,
+                accounts: [newAccount]
+            }
         }))
         : (user = new organizationModel({
             username,
             password: passwordHash,
             email,
             role,
-			wallet:  {
-				id: walletID,
-				accounts: [newAccount]
-			}
+            wallet: {
+                id: walletID,
+                accounts: [newAccount]
+            }
         }));
 
     if (!user)
@@ -94,11 +96,11 @@ async function addUser(req: Request, res: Response) {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-				wallet: {
-					id: user.wallet.id,
-					accounts: user.wallet.accounts
-				},
-                projects:[]
+                wallet: {
+                    id: user.wallet.id,
+                    accounts: user.wallet.accounts
+                },
+                projects: []
             },
         });
 }
@@ -136,7 +138,7 @@ async function login(req: Request, res: Response) {
     try {
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = auth.signToken(user);
-			console.log(user);
+            console.log(user);
             return res
                 .cookie("token", token, {
                     httpOnly: true,
@@ -151,11 +153,12 @@ async function login(req: Request, res: Response) {
                         username: user.username,
                         email: user.email,
                         role: user.role,
-						wallet: {
-							id: user.wallet.id,
-							accounts: user.wallet.accounts
-						},
-                        projects: user.projects
+                        wallet: {
+                            id: user.wallet.id,
+                            accounts: user.wallet.accounts
+                        },
+                        projects: user.projects,
+                        approved: user.approved
                     },
                     msg: "User login success",
                 });
@@ -218,10 +221,10 @@ async function getLoggedIn(req: Request, res: Response) {
                 username: loggedInUser.username,
                 email: loggedInUser.email,
                 role: loggedInUser.role,
-				wallet: {
-					id: loggedInUser.wallet.id,
-					accounts: loggedInUser.wallet.accounts
-				},
+                wallet: {
+                    id: loggedInUser.wallet.id,
+                    accounts: loggedInUser.wallet.accounts
+                },
                 projects: loggedInUser.projects
             },
         });
@@ -249,7 +252,6 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
         phone,
         location,
         website,
-        approved,
     } = req.body;
 
     // CHECK IF ALL FIELDS ARE VALID
@@ -268,8 +270,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
             .json({status: "ERROR", msg: `Field missing from the form`});
     }
 
-    let newOrg;
-    try {
+    try{
         // CHECK IF THE FORM EXIST FOR THE REQUESTED ORGANIZATION
         const formExists = await authFormModel.find({orgId});
         if (formExists.length > 0) {
@@ -278,6 +279,33 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
                 msg: "The form already exists for this organization!",
             });
         }
+    } catch(err) {
+        console.log(err);
+        return res.status(500)
+            .json({status: "ERROR", msg: `Error while requesting to db`});
+    }
+
+    let approved = false;
+
+    // MAKE EXTERNAL API CALL TO CHECK IF ORG IS LEGIT
+    // IF YES, SET "approved" field to TRUE
+    try {
+        const apiRes = await fetch(process.env.API_URL + EIN +".json")
+        const apiResJson = await apiRes.json();
+        if(apiResJson.organization) {
+            // set the form to be approved
+            approved = true;
+            // set the organization to be approved
+            await organizationModel.findOneAndUpdate({username: orgId}, {approved : true});
+        }
+    } catch (err) {
+        console.log(err);
+        return res.status(500)
+            .json({status: "ERROR", msg: `Something wrong while making external API CALL!`});
+    }
+
+    let newOrg;
+    try {
         newOrg = new authFormModel({
             orgId,
             name,
@@ -287,6 +315,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
             phone,
             location,
             website,
+            approved
         });
         await newOrg.save();
     } catch (err) {

@@ -13,6 +13,8 @@ const PORT = parseInt(process.env.PORT) || 4000; // Type assert to string
 crypto_1.KeyDaemonClient.getInstance();
 // CRYPTO INIT
 crypto_1.CryptoClient.getInstance();
+// INDEXER INIT
+crypto_1.IndexClient.getInstance();
 // DB SETUP
 dbconfig_1.connection.on("error", console.error.bind(console, "MONGODB CONNECTION ERROR"));
 app.listen(PORT, () => {
