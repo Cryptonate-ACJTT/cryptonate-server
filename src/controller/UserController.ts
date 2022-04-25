@@ -296,7 +296,7 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
             // set the form to be approved
             approved = true;
             // set the organization to be approved
-            await organizationModel.findOneAndUpdate({username: orgId}, {approved : true});
+            await organizationModel.findOneAndUpdate({_id: orgId}, {approved : true});
         }
     } catch (err) {
         console.log(err);

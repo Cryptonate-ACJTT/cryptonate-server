@@ -25,6 +25,7 @@ const getSingleImage = (req: Request, res: Response) => {
 
 /**
  * @brief - Request for adding a project to explore page
+ *
  */
 async function createProject(req: Request, res: Response) {
     const {
@@ -41,7 +42,7 @@ async function createProject(req: Request, res: Response) {
     console.log(req.body);
     // CHECK IF ALL FIELDS ARE VALID
     if (
-        !orgName ||
+        !orgName||
         !projectName ||
         !projectSubTitle ||
         !category ||
