@@ -10,7 +10,8 @@ const DonorSchema: Schema = new Schema<User>(
         email: {type: String, required: true},
         role: {type: String, required: true},
 		wallet: {type: WalletSchema, required: true},
-        projects: {type: [ProjectSchema], default: []}
+        projects: {type: [ProjectSchema], default: []},
+        approved: {type: Boolean, default: true}
     },
     {
         timestamps: true,

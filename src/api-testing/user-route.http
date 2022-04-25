@@ -17,7 +17,7 @@ POST http://localhost:4000/api/v1/user/login HTTP/1.1
 content-type: application/json
 
 {
-  "email": "org@gmail.com",
+  "email": "org2@gmail.com",
   "password": "password"
 }
 
@@ -44,9 +44,9 @@ POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
 
 {
-  "username": "newOrg",
+  "username": "org2",
   "password": "password",
-  "email": "neworg@gmail.com",
+  "email": "org2@gmail.com",
   "role": "organization"
 }
 
@@ -57,14 +57,14 @@ POST http://localhost:4000/api/v1/user/submitOrgForm HTTP/1.1
 content-type: application/json
 
 {
-  "orgId": "newOrg",
-  "name": "new org",
-  "EIN": "12345678",
+  "orgId": "org2",
+  "name": "random org",
+  "EIN": "123",
   "category": "animal",
-  "email": "neworg@gmail.com",
+  "email": "myorg@gmail.com",
   "phone": "123456789",
   "location": "Stony Brook",
-  "website": "org.com"
+  "website": "myorg.com"
 }
 
 
