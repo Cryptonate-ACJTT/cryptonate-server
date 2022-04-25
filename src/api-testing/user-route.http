@@ -5,10 +5,10 @@ POST http://localhost:4000/api/v1/user HTTP/1.1
 content-type: application/json
 
 {
-  "username": "donor2",
+  "username": "org20",
   "password": "password",
-  "email": "donor2@gmail.com",
-  "role": "donor"
+  "email": "org20@gmail.com",
+  "role": "organization"
 }
 
 ### LOGIN USER
@@ -17,7 +17,7 @@ POST http://localhost:4000/api/v1/user/login HTTP/1.1
 content-type: application/json
 
 {
-  "email": "org2@gmail.com",
+  "email": "org20@gmail.com",
   "password": "password"
 }
 
@@ -57,9 +57,9 @@ POST http://localhost:4000/api/v1/user/submitOrgForm HTTP/1.1
 content-type: application/json
 
 {
-  "orgId": "org2",
+  "orgId": "6265ee0f82860b54032bb3d6",
   "name": "random org",
-  "EIN": "123",
+  "EIN": "131760110",
   "category": "animal",
   "email": "myorg@gmail.com",
   "phone": "123456789",
