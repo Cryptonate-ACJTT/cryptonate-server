@@ -61,7 +61,9 @@ async function addUser(req: Request, res: Response) {
             wallet: {
                 id: walletID,
                 accounts: [newAccount]
-            }
+            },
+            approved: true
+
         }))
         : (user = new organizationModel({
             username,
@@ -71,7 +73,8 @@ async function addUser(req: Request, res: Response) {
             wallet: {
                 id: walletID,
                 accounts: [newAccount]
-            }
+            },
+            approved: false
         }));
 
     if (!user)
@@ -100,7 +103,8 @@ async function addUser(req: Request, res: Response) {
                     id: user.wallet.id,
                     accounts: user.wallet.accounts
                 },
-                projects: []
+                projects: [],
+                approved: user.approved
             },
         });
 }
@@ -225,7 +229,8 @@ async function getLoggedIn(req: Request, res: Response) {
                     id: loggedInUser.wallet.id,
                     accounts: loggedInUser.wallet.accounts
                 },
-                projects: loggedInUser.projects
+                projects: loggedInUser.projects,
+                approved: loggedInUser.approved
             },
         });
     } catch (err) {
@@ -243,6 +248,7 @@ async function getLoggedIn(req: Request, res: Response) {
  * @brief - Form for authenticating organization
  */
 async function submitOrgAuthenticationForm(req: Request, res: Response) {
+
     const {
         orgId,
         name,
