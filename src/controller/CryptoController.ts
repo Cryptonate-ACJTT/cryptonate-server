@@ -1,3 +1,4 @@
+import { microalgosToAlgos } from "algosdk";
 import { Request, Response } from "express";
 import { CryptoClient, IndexClient, KeyDaemonClient } from "../middleware/crypto";
 import { donorModel } from "../models/DonorModel";
@@ -150,7 +151,7 @@ const checkAccountBalances = async (req: Request, res: Response) => {
 	let balances: any = [];
 
 	for(let i = 0; i < addresses.length; i++) {
-		balances.push({address: addresses[i], balance: await checkBalanceHelper(addresses[i])})
+		balances.push({address: addresses[i], balance: microalgosToAlgos(await checkBalanceHelper(addresses[i]))})
 		//balances[addresses[i]] = checkBalanceHelper(addresses[i]);
 	}
 
