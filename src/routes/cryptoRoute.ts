@@ -5,7 +5,7 @@ import { verify } from "../middleware/auth";
 const router = Router();
 
 router.post("/newWallet", verify, CryptoController.createNewWallet);
-router.post("/balance", CryptoController.checkAccountBalace);
+router.post("/balance", CryptoController.checkAccountBalances);
 
 router.post("/txn/basic", verify, CryptoController.basicTxn);
 

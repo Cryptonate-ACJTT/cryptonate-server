@@ -1,3 +1,4 @@
+import { microalgosToAlgos } from "algosdk";
 import { Request, Response } from "express";
 import { CryptoClient, IndexClient, KeyDaemonClient } from "../middleware/crypto";
 import { donorModel } from "../models/DonorModel";
@@ -135,6 +136,29 @@ const checkAccountBalace = async (req: Request, res: Response) => {
 	return res.status(404).json({status: "ERROR", msg: "Problems retrieving account balance!"});
 }
 
+const checkBalanceHelper = async (address: string) => {
+	let balance = await CryptoClient.getBalance(address);
+	return balance;	
+}
+
+const checkAccountBalances = async (req: Request, res: Response) => {
+	let {addresses} = req.body;
+
+	if(addresses.length === 0) {
+		return fourohfour(res, "No accounts sent!", {});
+	}
+
+	let balances: any = [];
+
+	for(let i = 0; i < addresses.length; i++) {
+		balances.push({address: addresses[i], balance: microalgosToAlgos(await checkBalanceHelper(addresses[i]))})
+		//balances[addresses[i]] = checkBalanceHelper(addresses[i]);
+	}
+
+	if(balances.length > 0) {
+		return twohundred(res, "Successfully retrieved balances", {balances: balances});
+	}
+}
 
 
 /**
@@ -234,7 +258,7 @@ const getIndexData = async (req: Request, res: Response) => {
 export {
 	createNewWallet,
 
-	checkAccountBalace,
+	checkAccountBalances,
 
 	basicTxn,
 
