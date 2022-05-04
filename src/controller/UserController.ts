@@ -32,10 +32,14 @@ async function addUser(req: Request, res: Response) {
     }
 
     // CHECK IF USER ALREADY EXISTS BY THE email
-    const existingUser =
-        role === ROLE.DONOR
-            ? await donorModel.findOne({email})
-            : await organizationModel.findOne({email});
+    // const existingUser =
+    //     role === ROLE.DONOR
+    //         ? await donorModel.findOne({email})
+    //         : await organizationModel.findOne({email});
+    let existingUser = false;
+    if(await donorModel.exists({email}) || await organizationModel.exists({email})){
+        existingUser = true;
+    }
 
     if (existingUser)
         return res.status(400).json({
@@ -49,7 +53,7 @@ async function addUser(req: Request, res: Response) {
 
     let user: User;
 
-    let walletID = await KeyDaemonClient.newWallet(username, passwordHash);
+    let walletID = await KeyDaemonClient.newWallet(email, passwordHash);
     let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
 
     role === ROLE.DONOR
@@ -342,6 +346,8 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
 async function editOrgAuthenticationForm(req: Request, res: Response) {
     const {orgId, name, EIN, category, email, phone, location, website} =
         req.body;
+
+    console.log(req.body)
 
     if (!orgId)
         return res
