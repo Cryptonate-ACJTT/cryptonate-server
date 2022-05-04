@@ -1,5 +1,9 @@
-import algosdk from "algosdk";
+import algosdk, { LogicSigAccount } from "algosdk";
+import { Response } from "express";
+import { readFileSync } from "fs";
+import path from "path";
 import User from "../models/interface/User";
+import util from "util"
 
 /**
  * Contains all the interactions we need with algorand stuff
@@ -31,9 +35,39 @@ const TOKENS = {
 }
 
 /**
+ * TESTING ONLY: devnet prefunded account mnemonics for funding test accounts
+ */
+const PREFUNDED_MNEMONIC = "shuffle talent arena evil upset wish economy funny hair rocket dirt friend desert recall before letter useless rule garment tower all blur goat abstract fruit"
+
+/**
  * Rounds to wait for algodv2 to timeout	
  */
 const DEFAULT_TIMEOUT = 10;
+
+/**
+ * Valid python files to execute.
+ */
+const VALID_PYTEAL = [];
+
+/************************************
+	COMMON FXNS
+*************************************/
+
+const returnable = (status: string, value: unknown) => {
+	return {status: status, value: value};
+}
+
+const returnError = (error: unknown) => {
+	return returnable("ERROR", error);
+}
+
+const returnOther = (value: unknown) => {
+	return returnable("OK", value);
+}
+
+/************************************
+	KEY DAEMON CLIENT
+*************************************/
 
 /**
  * Client for the Key Management Daemon.
@@ -51,6 +85,7 @@ const DEFAULT_TIMEOUT = 10;
 		return KeyDaemonClient.instance;
 	}
 
+
 	/**
 	 * Singleton getInstance() fxn for getting the key daemon, used once in app.ts
 	 * @returns KeyDaemonClient
@@ -63,6 +98,7 @@ const DEFAULT_TIMEOUT = 10;
 		return KeyDaemonClient.instance;
 	}
 
+
 	/**
 	 * Generate a new wallet, returns a wallet id.
 	 * @param {string} name 
@@ -74,6 +110,7 @@ const DEFAULT_TIMEOUT = 10;
 		return walletID;
 	}
 
+
 	/**
 	 * Gets a wallet handle given the id and password
 	 * @param walletID 
@@ -84,6 +121,7 @@ const DEFAULT_TIMEOUT = 10;
 		let walletHandle = (await KeyDaemonClient.client.initWalletHandle(walletID, password)).wallet_handle_token;
 		return walletHandle;
 	}
+
 
 	/**
 	 * The key daemon releases the wallet handle so it cannot be used nefariously
@@ -130,16 +168,74 @@ const DEFAULT_TIMEOUT = 10;
 	 */
 	public static getAccountKey = async (walletID: string, password: string, address: string) => {
 		let handle = await KeyDaemonClient.getWalletHandle(walletID, password);
-		let key = await KeyDaemonClient.client.exportKey(handle, password, address);
+		let sKey = new Uint8Array((await KeyDaemonClient.client.exportKey(handle, password, address)).private_key);
 
 		await KeyDaemonClient.freeWalletHandle(handle);
 
-		return key;
+		return sKey;
+	}
+
+
+	/**
+	 * Get account private key from mnemonic.
+	 * @param mnemonic 
+	 * @returns 
+	 */
+	public static getAccountKeyFromMnemonic = async (mnemonic: string) => {
+		return algosdk.mnemonicToSecretKey(mnemonic).sk;
+	}
+
+
+	/**
+	 * Returns the wallet mnemonic, which can be used to recover a lost wallet or import one.
+	 * @param walletID 
+	 * @param password 
+	 * @returns 
+	 */
+	public static exportWalletMnemonic = async (walletID: string, password: string) => {
+		let handle = await KeyDaemonClient.getWalletHandle(walletID, password);
+		let mdk = (await KeyDaemonClient.client.exportMasterDerivationKey(handle, password)).master_derivation_key;
+
+		await KeyDaemonClient.freeWalletHandle(handle);
+
+		return algosdk.secretKeyToMnemonic(new Uint8Array(mdk));
+	}
+
+
+	/**
+	 * Export mnemonic for wallet.
+	 * @param walletID 
+	 * @param password 
+	 * @param address 
+	 * @returns 
+	 */
+	public static exportAccountMnemonic = async (walletID: string, password: string, address: string) => {
+		let key = await KeyDaemonClient.getAccountKey(walletID, password, address);
+		return algosdk.secretKeyToMnemonic(key);
+	}
+
+
+	/**
+	 * Import an account into a wallet given a mnemonic phrase
+	 * @param walletID 
+	 * @param password 
+	 * @param mnemonic 
+	 * @returns 
+	 */
+	public static importAccountMnemonic = async (walletID: string, password: string, mnemonic: string) => {
+		let handle = await KeyDaemonClient.getWalletHandle(walletID, password);
+		let addr = (await KeyDaemonClient.client.importKey(handle, (algosdk.mnemonicToSecretKey(mnemonic).sk.toString())))
+		await KeyDaemonClient.freeWalletHandle(handle);
+
+		return addr;
 	}
 }
 
 
 
+/************************************
+	CRYPTO CLIENT
+*************************************/
 
 /**
  * Client for accessing Algorand
@@ -158,6 +254,7 @@ export class CryptoClient {
 		return CryptoClient.instance;
 	}
 
+
 	/**
 	 * Singleton getInstance for getting the client; called in app.ts currently for initialization
 	 * @returns CryptoClient
@@ -169,6 +266,7 @@ export class CryptoClient {
 
 		return CryptoClient.instance;
 	}
+
 
 	/**
 	 * Returns the account balance of the given address
@@ -193,13 +291,13 @@ export class CryptoClient {
 	 */
 	public static basicTransaction = async (walletID: string, password: string, sender: string, receiver: string, note: string, amount: number) => {
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
-
+	
 		if(note === "") {
 			note = "MUYzRjMgRkUwRiAyMDBEIDI2QTcgRkUwRg==";
 		}
 
-		let txn = await algosdk.makePaymentTxnWithSuggestedParams(sender, receiver, amount, undefined, new TextEncoder().encode(note), txnParams);
-		let sKey = new Uint8Array((await KeyDaemonClient.getAccountKey(walletID, password, sender)).private_key);
+		let txn = await algosdk.makePaymentTxnWithSuggestedParams(sender, receiver, CryptoClient.convertToMicros(amount), undefined, new TextEncoder().encode(note), txnParams);
+		let sKey = await KeyDaemonClient.getAccountKey(walletID, password, sender);
 		let signedTxn = txn.signTxn(sKey);
 		let txID = txn.txID();
 
@@ -207,7 +305,7 @@ export class CryptoClient {
 
 		return txID;
 	}
-
+	
 
 	/**
 	 * waits for the transaction to be confirmed or rejected, returns true/false
@@ -241,17 +339,112 @@ export class CryptoClient {
 		return (algos * MICROS_IN_ONE_ALGO);
 	}
 
-	/*
-	public static fundNewAccountForTesting = async (walletID: string, password: string, receiver: string) => {
-		const masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
-		const testAmt = 1000000;
-		let txID = await CryptoClient.basicTransaction(walletID, password, masterAcc, receiver, "", testAmt);
 
-		return await CryptoClient.confirmTransaction(txID);
+	/**
+	 * Given an account address, funds the account with 5 Algos for testing purposes.
+	 * @param receiver 
+	 * @returns 
+	 */
+	public static fundNewAccountForTesting = async (receiver: string) => {
+		let masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
+		let txnParams = await CryptoClient.client.getTransactionParams().do();
+		let testAmt = 5;
+		let note = "test funding";
+		
+		let txn = await algosdk.makePaymentTxnWithSuggestedParams(masterAcc, receiver, CryptoClient.convertToMicros(testAmt), undefined, new TextEncoder().encode(note), txnParams);
+		let sKey = new Uint8Array((await KeyDaemonClient.getAccountKeyFromMnemonic(PREFUNDED_MNEMONIC)));
+		let signedTxn = txn.signTxn(sKey);
+		let txID = txn.txID();
+
+		await CryptoClient.client.sendRawTransaction(signedTxn).do();
+
+		return txID;
 	}
+
+
+	/*
+		TEAL INTERACTIONS
 	*/
+
+	/**
+	 * takes a filepath and calls compileTealProgram
+	 * @param filePath 
+	 * @returns compiled TEAL program
+	 */
+	public static compileTealFromFile = async (filePath: string) => {
+		let fp = path.join(__dirname, filePath);
+		let file = readFileSync(fp);
+
+		return await this.compileTealProgram(file);
+	}
+
+
+	/**
+	 * Takes a contract/signature and compiles it
+	 * @param contractCode 
+	 * @returns compiled TEAL program
+	 */
+	public static compileTealProgram = async (contractCode: string | Uint8Array) => {
+		let compiled = await CryptoClient.client.compile(contractCode).do();
+
+		console.log(compiled);
+
+		return compiled;
+	}
+
+	/**
+	 * Takes the output of a compiled teal program (compiled.result) and turns it into a Uint8Array
+	 * @param result 
+	 * @returns Uint8Array
+	 */
+	public static getUint8Program = (result: string) => {
+		let program = new Uint8Array(Buffer.from(result, "base64"));
+		return program;
+	}
+
+	/**
+	 * Takes the program created by getUint8Program and makes a LogicSigAccount.
+	 * @param program 
+	 * @returns LogicSigAccount
+	 */
+	public static getLogicSignature = (program: Uint8Array) => {
+		let logicSig = new LogicSigAccount(program);
+		return logicSig;
+	}
+
+
+	/*	public static verifyPython = (path: string) => {
+
+	}*/
+
+
+	/**
+	 * Runs a python program as a child process of the server, returns its stdout or null;
+	 * @param path 
+	 * @param callback 
+	 */
+	public static runPyTEAL = async (path: string) => {
+		const exec = util.promisify(require("child_process").exec);
+
+		await exec(`python3 ${path}`, (error: Error, stdout: string | Buffer, stderr: string | Buffer) => {
+			if(error || stderr) {
+				console.error(error, stderr);
+				return null;
+			}
+
+			return stdout;
+		});
+	}
+
+
+	public static makeProjectContract = async (creator: string) => {
+		
+	}	
 }
 
+/************************************
+	INDEX CLIENT
+*************************************/
 
 export class IndexClient {
 	private static instance: IndexClient;
@@ -261,11 +454,11 @@ export class IndexClient {
 		if(!IndexClient.instance) {
 			IndexClient.instance = this;
 			IndexClient.client = new algosdk.Indexer("", SERVER, PORTS.INDEXER);
-
 		}
 
 		return IndexClient.instance;
 	}
+
 
 	/**
 	 * Singleton getInstance for getting the client; called in app.ts currently for initialization
@@ -278,6 +471,7 @@ export class IndexClient {
 
 		return IndexClient.instance;
 	}
+
 
 	public static getAccountTxnData = async (address: string) => {
 		let info = await IndexClient.client.searchForTransactions().address(address).do();

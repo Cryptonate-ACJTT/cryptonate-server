@@ -5,24 +5,7 @@ import { donorModel } from "../models/DonorModel";
 import User from "../models/interface/User";
 import { organizationModel } from "../models/OrganizationModel";
 import ROLE from "../models/Role";
-
-const responder = (res: Response, code: number, status: string, msg: string, json: Object) => {
-	return res.status(code).json({
-		status: status,
-		msg: msg,
-		...json
-	})
-}
-
-const fourohfour = (res: Response, msg: string, json: Object) => {
-	return responder(res, 404, "ERROR", msg, json);
-}
-
-const twohundred = (res: Response, msg: string, json: Object) => {
-	return responder(res, 200, "OK", msg, json);
-}
-
-
+import { checkKeyExists, getUserFromRole, responder, res200, res404 } from "./Commons";
 
 
 /**
@@ -145,7 +128,7 @@ const checkAccountBalances = async (req: Request, res: Response) => {
 	let {addresses} = req.body;
 
 	if(addresses.length === 0) {
-		return fourohfour(res, "No accounts sent!", {});
+		return res404(res, "No accounts sent!");
 	}
 
 	let balances: any = [];
@@ -156,7 +139,7 @@ const checkAccountBalances = async (req: Request, res: Response) => {
 	}
 
 	if(balances.length > 0) {
-		return twohundred(res, "Successfully retrieved balances", {balances: balances});
+		return res200(res, "Successfully retrieved balances", {balances: balances});
 	}
 }
 
@@ -171,12 +154,31 @@ const basicTxn = async (req: Request, res: Response) => {
 	let user: User | null;
 	let {email, role, wallet, sender, receiver, amount} = req.body;
 	
-	if(!role) {
-		return responder(res, 404, "ERROR", "NO ROLE", {});
+	if(!checkKeyExists({email, role, wallet, sender, receiver, amount})) {
+		return res404(res, "Missing request parameter");
 	}
 
-	// does the user exist?
+	user = await getUserFromRole(role, {email});
+
+	if(user) {
+		try {
+			let txID = await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
+			let confirmation = await CryptoClient.confirmTransaction(txID);
+
+			return res200(res, `Transaction ${txID} submitted`, {
+				txID: txID,
+				confirmation: confirmation
+			});
+			
+		} catch(err) {
+			return res404(res, String(err));
+		}
+	} else {
+		return res404(res, "no user found");
+	}
+	/*
 	try {
+		
 		if(role == ROLE.DONOR) {
 			user = await donorModel.findOne({email});
 		} else {
@@ -185,14 +187,22 @@ const basicTxn = async (req: Request, res: Response) => {
 	} catch (e) {
 		return responder(res, 404, "ERROR", "USER DOESN'T EXIST", {});
 	}
+	*/
 
+	/*
 	if(user) {
-		let txID = await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
-		return twohundred(res, `Transaction ${txID} submitted`, {
-			txID: txID,
-			confirmation: await CryptoClient.confirmTransaction(txID)
-		});
-	}
+		try {
+			let txID = await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
+			let confirmation = await CryptoClient.confirmTransaction(txID);
+
+			return res200(res, `Transaction ${txID} submitted`, {
+				txID: txID,
+				confirmation: confirmation
+			});
+		} catch(err) {
+			return res404(res, String(err), {});
+		}
+	}*/
 }
 
 
@@ -241,16 +251,16 @@ const createNewAddress = async(req: Request, res: Response) => {
 const getIndexData = async (req: Request, res: Response) => {
 	let {address} = req.body;
 	if(!address) {
-		return fourohfour(res, "No address given", {});
+		return res404(res, "No address given");
 	}
 
 	try {
 		let txnInfo = await IndexClient.getAccountTxnData(address);
 		console.log(txnInfo);
 
-		return twohundred(res, `Retrieved txns for ${address}: `, {txns: txnInfo});
+		return res200(res, `Retrieved txns for ${address}: `, {txns: txnInfo});
 	} catch {
-		return fourohfour(res, "Some error occurred", {});
+		return res404(res, "Some error occurred");
 	}
 }
 
