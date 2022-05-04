@@ -8,7 +8,8 @@ import { Response } from "express"
 import { donorModel } from "../models/DonorModel";
 import { organizationModel } from "../models/OrganizationModel";
 import ROLE from "../models/Role"
-import { Model } from "mongoose"
+import { Model, Document } from "mongoose"
+import User from "../models/interface/User";
 
 
 /**
@@ -138,4 +139,30 @@ export const getUserFromRole = async (role: string, modelParams: any) => {
 		console.error(err);
 		return null;
 	}
+}
+
+
+/**
+ * Save mongoose Document entry
+ * @param entry 
+ * @returns 
+ */
+export const saveModel = async (entry: Document) => {
+	try {
+		await entry.save();
+		return true;
+	} catch (err) {
+		console.error(err);
+		return false;
+	}
+}
+
+
+/**
+ * Save mongoose User document
+ * @param user 
+ * @returns 
+ */
+export const saveUser = async(user: User) => {
+	return await saveModel(user);
 }

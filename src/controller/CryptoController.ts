@@ -1,11 +1,8 @@
 import { microalgosToAlgos } from "algosdk";
 import { Request, Response } from "express";
 import { CryptoClient, IndexClient, KeyDaemonClient } from "../middleware/crypto";
-import { donorModel } from "../models/DonorModel";
 import User from "../models/interface/User";
-import { organizationModel } from "../models/OrganizationModel";
-import ROLE from "../models/Role";
-import { checkKeyExists, getUserFromRole, responder, res200, res404 } from "./Commons";
+import { checkKeyExists, getUserFromRole, res200, res404, saveUser } from "./Commons";
 
 
 /**
@@ -19,127 +16,78 @@ const createNewWallet = async (req: Request, res: Response) => {
 	let user: User | null;
 	const {email, role} = req.body;
 
-	if(!role) {
-		return res.status(404).json({
-			status: "ERROR"
-		});
+	
+	if(!checkKeyExists({email, role})) {
+		return res404(res, "Missing request parameter(s)!")
 	}
 
-	// does the user exist?
-	try {
-		if(role == ROLE.DONOR) {
-			user = await donorModel.findOne({email});
-		} else {
-			user = await organizationModel.findOne({email});
-		}
-	} catch (e) {
-		return res.status(404).json({
-			status: "ERROR",
-			msg: "User doesn't exist!"
-		});
-	}
+	user = await getUserFromRole(role, {email});
 
 	// create a wallet if none
 	if(user) {
 		if(!user.wallet) {
-			let walletID = await KeyDaemonClient.newWallet(user.username, user.password);
-			user.wallet = {
-				id: walletID,
-				accounts: [await KeyDaemonClient.newAddressFromID(walletID, user.password)]
-			};
+			try {
+				let walletID = await KeyDaemonClient.newWallet(user.username, user.password);
+				let accounts = [await KeyDaemonClient.newAddressFromID(walletID, user.password)];
+				
+				user.wallet = {
+					id: walletID,
+					accounts: accounts
+				};
+			} catch(err) {
+				return res404(res, "Problem creating wallet!")
+			}
 
-			
-			/*{
-				id: walletID,
-				accounts: [
-					await KeyDaemonClient.newAddressFromID(walletID, user.password)
-				]
-			}*/
+			let saved = await saveUser(user);
+
+			if(saved) {
+				return res200(res, "Wallet successfully created!", {wallet: user.wallet});
+			} else {
+				return res404(res, "Problem saving user!")
+			}
+
 		} else {
-			return res.status(200).json({
-				status: "OK",
-				msg: "Wallet already exists for this user.",
-				wallet: user.wallet
-			});
+			return res404(res, "Wallet for this user already exists");
 		}
-	}	
-
-	// try and save
-	try {
-		await user?.save();
-	} catch(e) {
-		return res.status(500).json({
-			status: "ERROR",
-			msg: "Error saving user."
-		})
 	}
 
-	// final success
-	if(user) {
-		return res.status(200).json({
-			status: "OK",
-			msg: "Wallet successfully created!",
-			wallet: user.wallet
-		});
-	}
-
-
-	// somehow if something breaks
-	return res.status(404).json({
-		status: "ERROR",
-		msg: `Something went wrong creating a wallet for ${email}`
-	});	
+	return res404(res, "Some problem making new wallet!");
 }
-
 
 
 /**
- * Check the account balance of an address!
- * @param req 
- * @param res 
+ * Helper method for checking address balances, reduce number of reqs to backend.
+ * @param address 
  * @returns 
  */
-const checkAccountBalace = async (req: Request, res: Response) => {
-	let {address} = req.body;
-
-	if(!address)
-		return res.status(404).json({status: "ERROR", msg: "No id provided"});
-	
-	let balance = await CryptoClient.getBalance(address);
-
-
-	if(balance >= 0) {
-		return res.status(200).json({
-			status: "OK",
-			msg: `Balance successfully retrieved for ${address}`,
-			balance: balance
-		});
-	}
-
-	return res.status(404).json({status: "ERROR", msg: "Problems retrieving account balance!"});
-}
-
 const checkBalanceHelper = async (address: string) => {
 	let balance = await CryptoClient.getBalance(address);
 	return balance;	
 }
 
+/**
+ * Fetch account balances for given addresses
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 const checkAccountBalances = async (req: Request, res: Response) => {
 	let {addresses} = req.body;
 
-	if(addresses.length === 0) {
-		return res404(res, "No accounts sent!");
+	if(!checkKeyExists({addresses})){
+		return res404(res, "Missing request parameter(s)!");
 	}
 
 	let balances: any = [];
 
-	for(let i = 0; i < addresses.length; i++) {
-		balances.push({address: addresses[i], balance: microalgosToAlgos(await checkBalanceHelper(addresses[i]))})
-		//balances[addresses[i]] = checkBalanceHelper(addresses[i]);
-	}
-
-	if(balances.length > 0) {
+	try {
+		for(let address of addresses) {
+			balances.push({address: address, balance: microalgosToAlgos(await checkBalanceHelper(address))})
+		}
 		return res200(res, "Successfully retrieved balances", {balances: balances});
+	} catch (err) {
+		console.error(err);
+		return res404(res, "Error fetching account balances!")
 	}
 }
 
@@ -155,7 +103,7 @@ const basicTxn = async (req: Request, res: Response) => {
 	let {email, role, wallet, sender, receiver, amount} = req.body;
 	
 	if(!checkKeyExists({email, role, wallet, sender, receiver, amount})) {
-		return res404(res, "Missing request parameter");
+		return res404(res, "Missing request parameter(s)");
 	}
 
 	user = await getUserFromRole(role, {email});
@@ -169,43 +117,14 @@ const basicTxn = async (req: Request, res: Response) => {
 				txID: txID,
 				confirmation: confirmation
 			});
-			
+
 		} catch(err) {
 			return res404(res, String(err));
 		}
 	} else {
 		return res404(res, "no user found");
 	}
-	/*
-	try {
-		
-		if(role == ROLE.DONOR) {
-			user = await donorModel.findOne({email});
-		} else {
-			user = await organizationModel.findOne({email});
-		}
-	} catch (e) {
-		return responder(res, 404, "ERROR", "USER DOESN'T EXIST", {});
-	}
-	*/
-
-	/*
-	if(user) {
-		try {
-			let txID = await CryptoClient.basicTransaction(wallet, user.password, sender, receiver, "", amount);
-			let confirmation = await CryptoClient.confirmTransaction(txID);
-
-			return res200(res, `Transaction ${txID} submitted`, {
-				txID: txID,
-				confirmation: confirmation
-			});
-		} catch(err) {
-			return res404(res, String(err), {});
-		}
-	}*/
 }
-
-
 
 
 /**
@@ -218,33 +137,30 @@ const createNewAddress = async(req: Request, res: Response) => {
 	let user: User | null;
 	let {email, role, wallet} = req.body;
 	
-	if(!role) {
-		return responder(res, 404, "ERROR", "NO ROLE", {});
+	if(!checkKeyExists({email, role, wallet})) {
+		return res404(res, "Missing request parameter(s)!");
 	}
 
-	try {
-		if(role == ROLE.DONOR) {
-			user = await donorModel.findOne({email});
-		} else {
-			user = await organizationModel.findOne({email});
-		}
-	} catch (e) {
-		return responder(res, 404, "ERROR", "USER DOESN'T EXIST", {});
-	}
+	user = await getUserFromRole(role, {email});
 
 	if(user) {
-		let address = await KeyDaemonClient.newAddressFromID(wallet, user.password);
-		user.wallet.accounts.push(address);
+		try {
+			let address = await KeyDaemonClient.newAddressFromID(wallet, user.password);
+			user.wallet.accounts.push(address);
+
+			let saved = await saveUser(user);
+			if(saved) {
+				return res200(res, "Created new address and saved!", {address: address});
+			} else {
+				return res404(res, "Error creating new address!");
+			}
+		} catch(err) {
+			console.error(err);
+			return res404(res, "Error making new address!");
+		}
 	}
 
-	try {
-		await user?.save();
-	} catch(e) {
-		return res.status(500).json({
-			status: "ERROR",
-			msg: "Error saving user."
-		});
-	}
+	return res404(res, "Problem creating new address!");
 }
 
 
