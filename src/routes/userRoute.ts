@@ -21,7 +21,7 @@ router.post("/logout", UserController.logout);
 router.post("/loggedIn", verify, UserController.getLoggedIn);
 router.post("/orgForm", verify, UserController.getOrgAuthenticationForm);
 router.post("/submitOrgForm", verify, upload.none(), UserController.submitOrgAuthenticationForm);
-router.post("/updateOrgForm", verify, UserController.editOrgAuthenticationForm);
+router.post("/updateOrgForm", verify, upload.none(), UserController.editOrgAuthenticationForm);
 router.post("/updateUser", verify, UserController.updateUser);
 
 export {router as UserRouter};
