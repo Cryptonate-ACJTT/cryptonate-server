@@ -4,10 +4,11 @@ import fs from "fs";
 import {promisify} from "util";
 import {Project, projectModel} from "../models/ProjectModel";
 import {donorModel} from "../models/DonorModel";
-import {KeyDaemonClient} from "../middleware/crypto";
+import {CryptoClient, KeyDaemonClient, MIN_FUNDING} from "../middleware/crypto";
 import {organizationModel} from "../models/OrganizationModel";
 import ROLE from "../models/Role";
 import User from "../models/interface/User";
+import { checkKeyExists, res404 } from "./Commons";
 
 /**
  * Contains everything related to Explore page and Project page
@@ -39,7 +40,7 @@ async function createProject(req: Request, res: Response) {
         userInfo
     } = req.body;
 
-    console.log(req.body);
+    //console.log(req.body);
     // CHECK IF ALL FIELDS ARE VALID
     if (
         !orgName||
@@ -57,7 +58,7 @@ async function createProject(req: Request, res: Response) {
     }
 
 
-    console.log(req.file);
+    //console.log(req.file);
 
     try {
         // CHECK IF SAME PROJECT ALREADY EXISTS
@@ -74,7 +75,7 @@ async function createProject(req: Request, res: Response) {
     }
 
 
-    console.log(userInfo)
+    //console.log(userInfo)
     let user: User | null
     const userData = JSON.parse(userInfo);
     const email = userData.email;
@@ -90,45 +91,63 @@ async function createProject(req: Request, res: Response) {
             .json({status: "ERROR", msg: "Trying to create a project with no user"})
     }
 
-    // post image to server
-    const file = req.file as Express.Multer.File;
-    const result = await uploadFile(file);
-    await unlinkFile(file.path); // DELETE THE FILE ONCE UPLOADED TO S3
-
     if (user) {
         try {
-            const address = await KeyDaemonClient.newAddressFromID(user.wallet.id, user.password);
-            user.wallet.accounts.push(address);
+            //const address = await KeyDaemonClient.newAddressFromID(user.wallet.id, user.password);
+            //user.wallet.accounts.push(address);
 
-            const newProject: Project = new projectModel({
-                orgName,
-                projectName,
-                projectSubTitle,
-                category,
-                summary,
-                solution,
-                image: `/images/${result.Key}`,
-                goalAmount,
-                address: address
-            });
+			// smart contracts!!!
 
-            await newProject.save();
+			let endTime = new Date();
+			endTime.setFullYear(endTime.getFullYear() + 1);	// TEMPORARY; also needs close_on_funded set;
 
-            user.projects.push(newProject);
+			const userBalance = await CryptoClient.getBalance(user.wallet.accounts[0]);
+			if(userBalance < MIN_FUNDING) {
+				return res404(res, `You need a minimum of ${CryptoClient.convertFromMicros(MIN_FUNDING)} Algos to make a project!!!`);
+			}
 
-            await user.save();
+			let contract = await CryptoClient.makeProjectContract(user.wallet.id, user.password, user.wallet.accounts[0], goalAmount, endTime, true);
 
-            return res.status(201).json({
-                status: "SUCCESS",
-                msg: "Form successfully saved!",
-                project: newProject,
-                wallet: user.wallet
-            });
+			if(contract) {
+				// post image to server -- moved this to later because we don't want to upload a file if no project is getting created
+				const file = req.file as Express.Multer.File;
+				const result = await uploadFile(file);
+				await unlinkFile(file.path); // DELETE THE FILE ONCE UPLOADED TO S3
+
+				const newProject: Project = new projectModel({
+					orgName,
+					projectName,
+					projectSubTitle,
+					category,
+					summary,
+					solution,
+					image: `/images/${result.Key}`,
+					goalAmount,
+					appID: contract.appIndex,
+					address: contract.appAddr
+				});
+
+				await newProject.save();
+
+				user.projects.push(newProject);
+				user.wallet.accounts.push(contract.appAddr);
+
+				await user.save();
+
+				return res.status(201).json({
+					status: "SUCCESS",
+					msg: "Form successfully saved!",
+					project: newProject,
+					wallet: user.wallet
+				});
+			} else {
+				return res404(res, "Contract broke somehow...");
+			}
         } catch (e) {
             console.log(e)
             return res.status(500).json({
                 status: "ERROR",
-                msg: "Error saving user."
+                msg: "Error setting up project!"
             });
         }
 
@@ -271,6 +290,10 @@ async function getProjectsBySearch(req: Request, res: Response) {
     }
 
     return res.json({status: "OK", msg: "success", projects});
+}
+
+async function deleteProject() {
+	//TODO
 }
 
 export {

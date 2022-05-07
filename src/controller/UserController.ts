@@ -7,8 +7,9 @@ import User from "../models/interface/User";
 import ROLE from "../models/Role";
 import {adminModel} from "../models/AdminModel";
 import {AuthForm, authFormModel} from "../models/AuthFormModel";
-import {KeyDaemonClient} from "../middleware/crypto";
+import {CryptoClient, KeyDaemonClient} from "../middleware/crypto";
 import fetch from "node-fetch";
+import { checkKeyExists, getUserFromRole, res404 } from "./Commons";
 
 
 /**
@@ -53,10 +54,14 @@ async function addUser(req: Request, res: Response) {
 
     let user: User;
 
-    let walletID = await KeyDaemonClient.newWallet(email, passwordHash);
-    let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
+	try {
+		let walletID = await KeyDaemonClient.newWallet(email, passwordHash);
+		let newAccount = await KeyDaemonClient.newAddressFromID(walletID, passwordHash);
 
-    role === ROLE.DONOR
+		let txID = await CryptoClient.fundNewAccountForTesting(newAccount);
+		await CryptoClient.confirmTransaction(txID);
+
+		role === ROLE.DONOR
         ? (user = new donorModel({
             username,
             password: passwordHash,
@@ -66,7 +71,7 @@ async function addUser(req: Request, res: Response) {
                 id: walletID,
                 accounts: [newAccount]
             },
-            approved: true
+            approved: false
 
         }))
         : (user = new organizationModel({
@@ -81,36 +86,44 @@ async function addUser(req: Request, res: Response) {
             approved: false
         }));
 
-    if (!user)
-        return res.status(404).json({status: "ERROR", msg: "Parameter missing"});
+		if (!user)
+			return res.status(404).json({status: "ERROR", msg: "Parameter missing"});
 
-    await user.save();
+		await user.save();
 
-    // LOGIN THE USER
-    const token = auth.signToken(user);
+		// LOGIN THE USER
+		const token = auth.signToken(user);
 
-    // RETURN USER WITH PARTIAL DATA
-    res
-        .cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-        })
-        .status(200)
-        .json({
-            status: "OK",
-            user: {
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                wallet: {
-                    id: user.wallet.id,
-                    accounts: user.wallet.accounts
-                },
-                projects: [],
-                approved: user.approved
-            },
-        });
+		// RETURN USER WITH PARTIAL DATA
+		res
+			.cookie("token", token, {
+				httpOnly: true,
+				secure: true,
+				sameSite: "none",
+			})
+			.status(200)
+			.json({
+				status: "OK",
+				user: {
+					username: user.username,
+					email: user.email,
+					role: user.role,
+					wallet: {
+						id: user.wallet.id,
+						accounts: user.wallet.accounts
+					},
+					projects: [],
+					approved: user.approved
+				},
+			});
+
+	} catch (err: any) {
+		return res.status(404).json(err.toString())
+	}
+
+
+
+    
 }
 
 /**
@@ -124,6 +137,10 @@ async function addUser(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
     let user: User | null;
     const {email, password} = req.body;
+
+	if(!checkKeyExists({email, password})) {
+		return res404(res, "Missing parameter for login!")
+	}
 
     // CHECK IF USER IN THE DATABASE
     try {
