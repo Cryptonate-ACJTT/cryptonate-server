@@ -308,6 +308,14 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
             // set the organization to be approved
             await organizationModel.findOneAndUpdate({_id: orgId}, {approved : true});
         }
+        else{
+            return res
+            .status(404)
+            .json({
+                status: "ERROR",
+                msg: `Provided EIN's 501(c)(3) status is not approved by IRS.`,
+            });
+        }
     } catch (err) {
         console.log(err);
         return res.status(500)
