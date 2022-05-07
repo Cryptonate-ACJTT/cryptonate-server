@@ -54,7 +54,7 @@ def approval_program():
 	### PROJECT CREATION ###
 	
 	# goal of the project
-	goal_amount = Txn.application_args[1]
+	goal_amount = Btoi(Txn.application_args[1])
 
 	# creation time of the project
 	creation_time = Btoi(Txn.application_args[2])
@@ -63,10 +63,10 @@ def approval_program():
 	destruction_time = Btoi(Txn.application_args[3])
 
 	# does the project allow refunds if things don't go well?
-	allows_refunds = Txn.application_args[4]
+	allows_refunds = Btoi(Txn.application_args[4])
 
 	# does the project continue after funding goal reached?
-	closes_after_funds_met = Txn.application_args[5]
+	closes_after_funds_met = Btoi(Txn.application_args[5])
 	
 	# creation logic
 	creation = Seq(
@@ -103,29 +103,30 @@ def approval_program():
 	### PROJECT CONTRACT INTERACTIONS ###
 
 	# setup logic
-	#fxn_setup = Seq(
-		#Assert(Global.latest_timestamp() < App.globalGet(creation_time_key)),
-		#Approve()
-	#)
+	fxn_setup = Seq(
+		If(Txn.sender() == App.globalGet(organizer_key))
+			.Then(Approve()),
+		Reject()
+	)
 
 
 	# receiving donations logic!
 	dtx_i = Txn.group_index() - Int(1)
 	fxn_donate = Seq(
 		# check if this donation will be accepted
-		Assert(
-			And(
-				App.globalGet(project_open_key) == Int(1),									# project is open?
-				App.globalGet(creation_time_key) <= Global.latest_timestamp(),				# project has begun?
-				If(App.globalGet(destruction_time_enabled_key))								# does project have ending time?
-					.Then(Global.latest_timestamp() < App.globalGet(destruction_time_key))		# if so, has it passed?
-					.Else(Int(1)),
-				Gtxn[dtx_i].type_enum() == TxnType.Payment,									# is this a payment?
-				Gtxn[dtx_i].sender() == Txn.sender(),										# is the sender the sender?
-				Gtxn[dtx_i].receiver() == Global.current_application_address(),				# is it going to the contract account?
-				Gtxn[dtx_i].amount() > Global.min_txn_fee()									# is it over the fee amount?
-			)
-		),
+		#Assert(
+		#	And(
+				#App.globalGet(project_open_key) == Int(1),									# project is open?
+				#App.globalGet(creation_time_key) <= Global.latest_timestamp(),				# project has begun?
+				#If(App.globalGet(destruction_time_enabled_key))								# does project have ending time?
+				#	.Then(Global.latest_timestamp() < App.globalGet(destruction_time_key))		# if so, has it passed?
+				#	.Else(Int(1)),
+				#Gtxn[dtx_i].type_enum() == TxnType.Payment,									# is this a payment?
+				#Gtxn[dtx_i].sender() == Txn.sender(),										# is the sender the sender?
+				#Gtxn[dtx_i].receiver() == Global.current_application_address(),				# is it going to the contract account?
+				#Gtxn[dtx_i].amount() > Global.min_txn_fee()									# is it over the fee amount?
+		#	)
+		#),
 		
 		If(App.globalGet(closes_after_funds_met_key))										# does the project close once funds are met?
 			.Then(
@@ -229,10 +230,4 @@ def approval_program():
 
 	return program
 
-
-
-def clear_state_program():
-	return Approve()
-
-
-print(compileTeal(approval_program(), Mode.Application, version=6))
+print(compileTeal(approval_program(), Mode.Application, version=5))

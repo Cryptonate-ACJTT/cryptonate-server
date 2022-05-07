@@ -1,0 +1,231 @@
+#pragma version 6
+txn ApplicationID
+int 0
+==
+bnz main_l29
+txn OnCompletion
+int NoOp
+==
+bnz main_l18
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l6
+txn OnCompletion
+int OptIn
+==
+txn OnCompletion
+int CloseOut
+==
+||
+txn OnCompletion
+int UpdateApplication
+==
+||
+bnz main_l5
+err
+main_l5:
+int 0
+return
+main_l6:
+txn Sender
+byte "organizer"
+app_global_get
+==
+bnz main_l15
+byte "funds_met"
+app_global_get
+int 1
+==
+bnz main_l14
+main_l8:
+byte "dest_allowed"
+app_global_get
+int 1
+==
+bnz main_l13
+main_l9:
+byte "refunds"
+app_global_get
+int 1
+==
+bnz main_l12
+int 0
+return
+int 0
+return
+main_l12:
+byte "open"
+int 0
+app_global_put
+int 0
+return
+main_l13:
+byte "destruction"
+app_global_get
+global LatestTimestamp
+<=
+callsub closeproject_0
+b main_l9
+main_l14:
+byte "goal"
+app_global_get
+global CurrentApplicationAddress
+balance
+>=
+callsub closeproject_0
+b main_l8
+main_l15:
+byte "refunds"
+app_global_get
+int 1
+==
+bnz main_l17
+int 1
+return
+main_l17:
+byte "open"
+int 0
+app_global_put
+int 0
+return
+main_l18:
+txna ApplicationArgs 0
+byte "donation"
+==
+bnz main_l20
+err
+main_l20:
+byte "open"
+app_global_get
+int 1
+==
+byte "creation"
+app_global_get
+global LatestTimestamp
+<=
+&&
+byte "dest_allowed"
+app_global_get
+bnz main_l28
+int 1
+main_l22:
+&&
+txn GroupIndex
+int 1
+-
+gtxns TypeEnum
+int pay
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Sender
+txn Sender
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Receiver
+global CurrentApplicationAddress
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Amount
+global MinTxnFee
+>
+&&
+assert
+byte "funds_met"
+app_global_get
+bnz main_l25
+int 1
+return
+int 0
+return
+main_l25:
+global CurrentApplicationAddress
+balance
+txn GroupIndex
+int 1
+-
+gtxns Amount
++
+byte "goal"
+app_global_get
+>=
+bnz main_l27
+int 1
+return
+main_l27:
+byte "open"
+int 0
+app_global_put
+int 1
+return
+main_l28:
+global LatestTimestamp
+byte "destruction"
+app_global_get
+<
+b main_l22
+main_l29:
+byte "organizer"
+txna ApplicationArgs 0
+app_global_put
+byte "goal"
+txna ApplicationArgs 1
+app_global_put
+byte "creation"
+txna ApplicationArgs 2
+btoi
+app_global_put
+byte "destruction"
+txna ApplicationArgs 3
+btoi
+app_global_put
+byte "dest_allowed"
+txna ApplicationArgs 3
+btoi
+global LatestTimestamp
+<
+bnz main_l32
+int 1
+main_l31:
+app_global_put
+byte "refunds"
+txna ApplicationArgs 4
+app_global_put
+byte "funds_met"
+txna ApplicationArgs 5
+app_global_put
+byte "open"
+int 1
+app_global_put
+int 1
+return
+main_l32:
+int 0
+b main_l31
+
+// close_project
+closeproject_0:
+store 0
+load 0
+bnz closeproject_0_l2
+int 0
+return
+closeproject_0_l2:
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "organizer"
+app_global_get
+itxn_field CloseRemainderTo
+itxn_submit
+int 1
+return
