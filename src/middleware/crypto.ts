@@ -24,6 +24,9 @@ const PORTS = {
 	INDEXER: 8980
 }
 
+/**
+ * MicroAlgos in a single Algo. For reference.
+ */
 const MICROS_IN_ONE_ALGO = 1000000;
 
 /**
@@ -44,7 +47,6 @@ const PREFUNDED_MNEMONIC = "shuffle talent arena evil upset wish economy funny h
  */
 const DEFAULT_TIMEOUT = 10;
 
-
 /**
  * Smart contract constants for ease of use.
  */
@@ -59,7 +61,7 @@ const SMART_CONTRACTS = {
 		PYTEAL_PATH: PYTEAL_PATH + "project.py",
 		TEAL_PATH: TEAL_PATH + "project.teal",
 		GLOBAL_SCHEMA: {
-			INTS: 7,
+			INTS: 6,
 			BYTES: 2,
 		},
 		LOCAL_SCHEMA: {
@@ -69,6 +71,8 @@ const SMART_CONTRACTS = {
 	}
 }
 const MIN_FUNDING = 100000 + (28500 * SMART_CONTRACTS.PROJECT.GLOBAL_SCHEMA.INTS) + (50000 * SMART_CONTRACTS.PROJECT.GLOBAL_SCHEMA.BYTES);
+
+
 
 /************************************
 	KEY DAEMON CLIENT
@@ -356,10 +360,10 @@ export class CryptoClient {
 	public static fundNewAccountForTesting = async (receiver: string) => {
 		let masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
-		let testAmt = 5;
+		let testAmt = 10;
 		let note = "test funding";
 		
-		let txn = await algosdk.makePaymentTxnWithSuggestedParams(masterAcc, receiver, CryptoClient.convertToMicros(testAmt), undefined, new TextEncoder().encode(note), txnParams);
+		let txn = algosdk.makePaymentTxnWithSuggestedParams(masterAcc, receiver, CryptoClient.convertToMicros(testAmt), undefined, new TextEncoder().encode(note), txnParams);
 		let sKey = new Uint8Array((await KeyDaemonClient.getAccountKeyFromMnemonic(PREFUNDED_MNEMONIC)));
 		let signedTxn = txn.signTxn(sKey);
 		let txID = txn.txID();
@@ -425,10 +429,13 @@ export class CryptoClient {
 	 * @param program 
 	 * @returns LogicSigAccount
 	 */
+
+	/*
 	public static getLogicSignature = (program: Uint8Array) => {
 		let logicSig = new LogicSigAccount(program);
 		return logicSig;
 	}
+	*/
 
 
 	/**
@@ -436,6 +443,7 @@ export class CryptoClient {
 	 * @param path 
 	 * @param callback 
 	 */
+	/*
 	public static runPyTEAL : any = async (path: string) => {
 		const exec = util.promisify(require("child_process").exec);
 
@@ -447,7 +455,7 @@ export class CryptoClient {
 
 			return new Uint8Array(stdout);
 		});
-	}
+	}*/
 
 
 	/**
@@ -467,21 +475,20 @@ export class CryptoClient {
 	 * @param creator 
 	 * @param goalAmt 
 	 * @param endTime 
-	 * @param refunds 
 	 * @param closeOnFunded 
 	 * @returns 
 	 */
-	private static makeProjectContractArgs = (creator: string, goalAmt: number, endTime: Date, refunds: boolean, closeOnFunded: boolean) => {
+	private static makeProjectContractArgs = (creator: string, goalAmt: number, endTime: Date, closeOnFunded: boolean) => {
 		let args: any = [
 			new Uint8Array(Buffer.from(creator)),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(goalAmt))),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(new Date().getTime()))),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(endTime.getTime() / 1000))),
-			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(refunds ? 1 : 0))),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(closeOnFunded ? 1 : 0)))
 		]
 		return args;
 	}
+
 
 	/**
 	 * Makes sure the smart contract compiled bytecode exists; only has to be compiled once!
@@ -495,6 +502,7 @@ export class CryptoClient {
 			CryptoClient.programs.project = await CryptoClient.fullCompile(SMART_CONTRACTS.PROJECT.TEAL_PATH)
 		}
 	}
+
 
 	/**
 	 * Provide a minimum amount of funding for the smart contract.
@@ -516,11 +524,10 @@ export class CryptoClient {
 	 * @param creator 
 	 * @param goalAmount 
 	 * @param endTime 
-	 * @param refunds 
 	 * @param closeOnFunded 
 	 * @returns 
 	 */
-	public static makeProjectContract = async (walletID: string, password: string, creator: string, goalAmount: number, endTime: Date, refunds: boolean, closeOnFunded: boolean ) => {
+	public static makeProjectContract = async (walletID: string, password: string, creator: string, goalAmount: number, endTime: Date, closeOnFunded: boolean ) => {
 		await CryptoClient.checkProjectProgramsExist();
 		
 		let projectApproval = CryptoClient.programs.project;
@@ -528,7 +535,7 @@ export class CryptoClient {
 
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
 
-		let projectArgs = CryptoClient.makeProjectContractArgs(creator, goalAmount, endTime, refunds, closeOnFunded);
+		let projectArgs = CryptoClient.makeProjectContractArgs(creator, CryptoClient.convertToMicros(goalAmount), endTime, closeOnFunded);
 		
 		let txn = algosdk.makeApplicationCreateTxn(
 			creator, 
@@ -585,23 +592,43 @@ export class CryptoClient {
 
 		let sKey = await KeyDaemonClient.getAccountKey(walletID, password, sender);
 		
+		
 		let signedDonateTxn = donateTxn.signTxn(sKey);
 		let signedContractTxn = contractTxn.signTxn(sKey);
 
-		let signed = [];
-		signed.push(signedDonateTxn);
-		signed.push(signedContractTxn);
+		let signed = [signedDonateTxn, signedContractTxn]
 
 		let finalTxn = await CryptoClient.client.sendRawTransaction(signed).do();
+		
 
 		//let drr = await algosdk.createDryrun({client: CryptoClient.client, txns: [algosdk.decodeSignedTransaction(signed[0]), algosdk.decodeSignedTransaction(signed[1])]});
 		//const filename = 'dryrun.msgp'
 		//writeFileSync(filename, algosdk.encodeObj(drr.get_obj_for_encoding(true)))
 
+		//console.log(await CryptoClient.client.pendingTransactionInformation(finalTxn.txId).do());
+		//console.log(await CryptoClient.confirmTransaction(finalTxn.txID));
 
-		console.log(await CryptoClient.confirmTransaction(finalTxn.txID));
+		return {dtxID: donateTxn.txID(), ctxID: contractTxn.txID(), ftxID: finalTxn.txId};
+	}
 
-		return finalTxn.txID;
+
+	/**
+	 * Delete a project, only succeeds under certain parameters!
+	 * @param walletID 
+	 * @param password 
+	 * @param sender 
+	 * @param appIndex 
+	 * @returns 
+	 */
+	public static deleteProject = async (walletID: string, password: string, sender: string, appIndex: number) => {
+		let txnParams = await CryptoClient.client.getTransactionParams().do();
+
+		let sKey = await KeyDaemonClient.getAccountKey(walletID, password, sender);
+		
+		let deleteApp = algosdk.makeApplicationDeleteTxn(sender, txnParams, appIndex);
+		let finalTxn = await CryptoClient.client.sendRawTransaction(deleteApp.signTxn(sKey)).do();
+
+		return finalTxn.txId;
 	}
 }
 
@@ -610,10 +637,12 @@ export class CryptoClient {
 (async () => {
 	let user = await checkModelEntryExists(donorModel, {username:"user"}, MODEL_SEARCH_MODES.FIND_ONE);
 	//console.log(user.wallet.accounts[0])
-	
+	//
 	try {
-		console.log(await CryptoClient.donateToProject(user.wallet.id, user.password, user.wallet.accounts[0], "H6BBCRN4QVZCFSF4DQ7TT36GX66BJZTMLVK3ORJ6W5MXBQELQGPFB2XYGE", 20, 0.1));
-		//console.log(await CryptoClient.makeProjectContract(user.wallet.id, user.password, user.wallet.accounts[0], 2, new Date(2022, 5, 10, 20, 20, 20), true, true));
+		//console.log(await CryptoClient.donateToProject(user.wallet.id, user.password, user.wallet.accounts[0], 'CYMJGFROP52IJ67R5QKZBCGQH4JDDLKVBGS4537O4SNOSP2K7QX3I4EEDA', 78, 0.1));
+		//console.log(await CryptoClient.makeProjectContract(user.wallet.id, user.password, user.wallet.accounts[0], 1, new Date(2022, 5, 10, 20, 20, 20), true, true));
+	
+		//console.log(await CryptoClient.getBalance('CYMJGFROP52IJ67R5QKZBCGQH4JDDLKVBGS4537O4SNOSP2K7QX3I4EEDA'));
 	} catch(err) {
 		console.log(err);
 	}
@@ -659,6 +688,6 @@ export class IndexClient {
 
 	public static getAccByID = async (address: string, date: Date) => {
 		let info = await IndexClient.client.searchForTransactions().address(address).beforeTime(date.toISOString()).do()
-		console.log(info);
+		//console.log(info);
 	}
 }

@@ -11,27 +11,9 @@ def approval_program():
 	creation_time_key = Bytes("creation")
 	destruction_time_key = Bytes("destruction")
 	destruction_time_enabled_key = Bytes("dest_allowed")
-	allows_refunds_key = Bytes("refunds")
 	closes_after_funds_met_key = Bytes("funds_met")
 	project_open_key = Bytes("open")
 
-
-	### SUBROUTINES ###
-
-	@Subroutine(TealType.none)
-	def refund(address: Expr, amount: Expr) -> Expr:
-		balance = Balance(Global.current_application_address())
-		# TODO do some checking!!!
-
-		return Seq(
-			InnerTxnBuilder.Begin(),
-			InnerTxnBuilder.SetFields({
-				TxnType.type_enum: TxnType.Payment,
-				TxnField.receiver: address,
-				TxnField.amount: amount
-			}),
-			InnerTxnBuilder.Submit()
-		)
 		
 	@Subroutine(TealType.none)
 	def close_project(test_expression: Expr) -> Expr:
@@ -62,11 +44,8 @@ def approval_program():
 	# destruction time of the project
 	destruction_time = Btoi(Txn.application_args[3])
 
-	# does the project allow refunds if things don't go well?
-	allows_refunds = Btoi(Txn.application_args[4])
-
 	# does the project continue after funding goal reached?
-	closes_after_funds_met = Btoi(Txn.application_args[5])
+	closes_after_funds_met = Btoi(Txn.application_args[4])
 	
 	# creation logic
 	creation = Seq(
@@ -81,7 +60,6 @@ def approval_program():
 				.Then(Int(0))
 				.Else(Int(1))
 		),
-		App.globalPut(allows_refunds_key, allows_refunds),
 		App.globalPut(closes_after_funds_met_key, closes_after_funds_met),
 		App.globalPut(project_open_key, Int(1)),
 
@@ -102,31 +80,32 @@ def approval_program():
 
 	### PROJECT CONTRACT INTERACTIONS ###
 
+	"""
 	# setup logic
 	fxn_setup = Seq(
 		If(Txn.sender() == App.globalGet(organizer_key))
 			.Then(Approve()),
 		Reject()
 	)
-
+	"""
 
 	# receiving donations logic!
 	dtx_i = Txn.group_index() - Int(1)
 	fxn_donate = Seq(
 		# check if this donation will be accepted
-		#Assert(
-		#	And(
-				#App.globalGet(project_open_key) == Int(1),									# project is open?
-				#App.globalGet(creation_time_key) <= Global.latest_timestamp(),				# project has begun?
-				#If(App.globalGet(destruction_time_enabled_key))								# does project have ending time?
-				#	.Then(Global.latest_timestamp() < App.globalGet(destruction_time_key))		# if so, has it passed?
-				#	.Else(Int(1)),
-				#Gtxn[dtx_i].type_enum() == TxnType.Payment,									# is this a payment?
-				#Gtxn[dtx_i].sender() == Txn.sender(),										# is the sender the sender?
-				#Gtxn[dtx_i].receiver() == Global.current_application_address(),				# is it going to the contract account?
-				#Gtxn[dtx_i].amount() > Global.min_txn_fee()									# is it over the fee amount?
-		#	)
-		#),
+		Assert(
+			And(
+				App.globalGet(project_open_key) == Int(1),									# project is open?
+				#Not(App.globalGet(organizer_key) == Txn.sender()),							# the creator can't donate to their own project?
+				If(App.globalGet(destruction_time_enabled_key))								# does project have ending time?
+					.Then(Global.latest_timestamp() <= App.globalGet(destruction_time_key))		# if so, has it passed?
+					.Else(Int(1)),
+				Gtxn[dtx_i].type_enum() == TxnType.Payment,									# is this a payment?
+				Gtxn[dtx_i].sender() == Txn.sender(),										# is the sender the sender?
+				Gtxn[dtx_i].receiver() == Global.current_application_address(),				# is it going to the contract account?
+				Gtxn[dtx_i].amount() > Global.min_txn_fee()									# is it over the fee amount?
+			)
+		),
 		
 		If(App.globalGet(closes_after_funds_met_key))										# does the project close once funds are met?
 			.Then(
@@ -146,46 +125,22 @@ def approval_program():
 		Reject()
 	)
 
-
-	# refunds, if applicable
-	"""fxn_refund = Seq(
-		Assert(
-			And(
-				App.globalGet(allows_refunds_key),											# does the project allow refunds?
-				Or( 																		# is the organizer or project itself refunding?
-					Txn.sender() == App.globalGet(organizer_key),
-					#Txn.sender() == App.current_application_address,
-				)
-			)
-		),
-		refund(Txn.application_args[0], Txn.application_args[1])							# refund, given address and amount
-	)"""
 	
 
 	fxn = Txn.application_args[0]
 	fxns = Cond(
-		#[fxn == Bytes("setup"), fxn_setup],
 		[fxn == Bytes("donation"), fxn_donate],
-		#[fxn == Bytes("refund"), fxn_refund],
 	)
 
 
 	
 
 	## project teardown ##
-
+	
 	destruction = Seq(
 		If(Txn.sender() == App.globalGet(organizer_key))
 			.Then(
-				If(App.globalGet(allows_refunds_key) == Int(1))
-					.Then(
-						Seq(
-							App.globalPut(project_open_key, Int(0)),	# 'close' the project
-							Reject()	# don't actually close it
-						)
-					)
-					.Else( Approve() ) # if the organizer sends the delete request, just do the teardown!
-					
+				close_project(Int(1) == Int(1))
 			)
 			.Else(
 				Seq(
@@ -198,15 +153,6 @@ def approval_program():
 						.Then(
 							close_project((App.globalGet(destruction_time_key) <= Global.latest_timestamp()))	# has that time passed?
 						),
-					
-					If(App.globalGet(allows_refunds_key) == Int(1))
-						.Then(
-							Seq(
-								App.globalPut(project_open_key, Int(0)),	# 'close' the project
-								Reject()	# don't actually close it
-							)	
-						),
-					
 					Reject()
 				)
 			),

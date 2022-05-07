@@ -172,7 +172,7 @@ const getIndexData = async (req: Request, res: Response) => {
 
 	try {
 		let txnInfo = await IndexClient.getAccountTxnData(address);
-		console.log(txnInfo);
+		//console.log(txnInfo);
 
 		return res200(res, `Retrieved txns for ${address}: `, {txns: txnInfo});
 	} catch {
