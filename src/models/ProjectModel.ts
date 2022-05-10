@@ -13,6 +13,7 @@ interface Project extends Document {
 	projectOpen: boolean
 	appID: number
 	address: string
+	creatorID: string
 }
 
 const ProjectSchema: Schema = new Schema<Project>(
@@ -28,7 +29,8 @@ const ProjectSchema: Schema = new Schema<Project>(
         totalSaved: {type: Number, default: 0.0}, // current progress coin saved
 		projectOpen: {type: Boolean, default: true},
 		appID: {type: Number, required: true},
-		address: {type: String, required: true}
+		address: {type: String, required: true},
+		creatorID: {type: String, required: true}
     },
     {
         timestamps: true,

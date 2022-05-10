@@ -70,8 +70,7 @@ async function addUser(req: Request, res: Response) {
             wallet: {
                 id: walletID,
                 accounts: [newAccount]
-            },
-            approved: false
+            }
 
         }))
         : (user = new organizationModel({

@@ -8,7 +8,7 @@ import {CryptoClient, KeyDaemonClient, MIN_FUNDING} from "../middleware/crypto";
 import {organizationModel} from "../models/OrganizationModel";
 import ROLE from "../models/Role";
 import User from "../models/interface/User";
-import { checkKeyExists, res404 } from "./Commons";
+import { checkKeyExists, getUserFromRole, res200, res404 } from "./Commons";
 
 /**
  * Contains everything related to Explore page and Project page
@@ -29,7 +29,7 @@ const getSingleImage = (req: Request, res: Response) => {
  *
  */
 async function createProject(req: Request, res: Response) {
-    const {
+    let {
         orgName,
         projectName,
         projectSubTitle,
@@ -82,7 +82,7 @@ async function createProject(req: Request, res: Response) {
 
     try {
         if (userData.role == ROLE.DONOR) {
-            user = await donorModel.findOne({email});
+			return res404(res, "Cannot create a project as a plain user!");
         } else {
             user = await organizationModel.findOne({email});
         }
@@ -100,6 +100,7 @@ async function createProject(req: Request, res: Response) {
 
 			let endTime = new Date();
 			endTime.setFullYear(endTime.getFullYear() + 1);	// TEMPORARY; also needs close_on_funded set;
+			console.log("TIME: ", endTime.getTime())
 
 			const userBalance = await CryptoClient.getBalance(user.wallet.accounts[0]);
 			if(userBalance < MIN_FUNDING) {
@@ -124,7 +125,8 @@ async function createProject(req: Request, res: Response) {
 					image: `/images/${result.Key}`,
 					goalAmount,
 					appID: contract.appIndex,
-					address: contract.appAddr
+					address: contract.appAddr,
+					creatorID: userInfo.id
 				});
 
 				await newProject.save();
@@ -292,8 +294,39 @@ async function getProjectsBySearch(req: Request, res: Response) {
     return res.json({status: "OK", msg: "success", projects});
 }
 
-async function deleteProject() {
-	//TODO
+/**
+ * Delete a given app.
+ * @param req 
+ * @param res 
+ * @returns 
+ */
+async function deleteProject(req: Request, res: Response) {
+	let user: User | null;
+
+	let {userInfo, sender, appID} = req.body;
+
+	let email = userInfo.email;
+	let role = userInfo.role;
+
+	if(checkKeyExists({userInfo, sender, appID})) {
+		return res404(res, "Parameter missing!");
+	}
+
+	user = await getUserFromRole(role, {email});
+
+	if(user) {
+		try {
+			let attempt = await CryptoClient.deleteProject(user.wallet.id, user.password, sender, appID);
+			let confirm = await CryptoClient.confirmTransaction(attempt);
+			if(confirm) {
+				return res200(res, "App delete successful", {});
+			}
+		} catch(err) {
+			console.error(err);
+		}
+	}
+
+	return res404(res, "Problem deleting app");
 }
 
 export {

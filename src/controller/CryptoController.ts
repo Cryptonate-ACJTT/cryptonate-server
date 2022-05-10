@@ -2,7 +2,8 @@ import { microalgosToAlgos } from "algosdk";
 import { Request, Response } from "express";
 import { CryptoClient, IndexClient, KeyDaemonClient } from "../middleware/crypto";
 import User from "../models/interface/User";
-import { checkKeyExists, getUserFromRole, res200, res404, saveUser } from "./Commons";
+import { Project, projectModel } from "../models/ProjectModel";
+import { checkKeyExists, checkModelEntryExists, getUserFromRole, MODEL_SEARCH_MODES, res200, res404, saveModel, saveUser } from "./Commons";
 
 
 /**
@@ -181,12 +182,63 @@ const getIndexData = async (req: Request, res: Response) => {
 }
 
 
+const receiveDonation = async (req: Request, res: Response) => {
+	let user: User | null;
+	let project: Project | null;
+
+	let {email, role, wallet, sender, projectAddress, projectID, amount} = req.body;
+	
+	if(!checkKeyExists({email, role, wallet, sender, projectAddress, projectID, amount})) {
+		return res404(res, "Missing request parameter(s)");
+	}
+
+	user = await getUserFromRole(role, {email});
+	project = await checkModelEntryExists(projectModel, {address: projectAddress}, MODEL_SEARCH_MODES.FIND_ONE);
+
+	if(user && project) {
+		try {
+			let txIDs = await CryptoClient.donateToProject(wallet, user.password, sender, projectAddress, projectID, amount);
+
+			let confirmations = {
+				dtx: await CryptoClient.confirmTransaction(txIDs.dtxID),
+				ctx: await CryptoClient.confirmTransaction(txIDs.ctxID)
+			}
+
+			if(confirmations.dtx && confirmations.ctx) {
+				project.totalSaved = project.totalSaved + amount;
+
+				if(project.totalSaved >= project.goalAmount) {
+					let delet = await CryptoClient.deleteProject(wallet, user.password, sender, projectID);
+					let confirmDel = await CryptoClient.confirmTransaction(delet);
+					if(confirmDel) {
+						project.projectOpen = false;
+						project.appID = -1;
+					}
+				}
+
+				let saved = await saveModel(project);
+
+				if(saved) {
+					return res200(res, "Donation submitted successfully!", {txIDs, confirmations});
+				}
+			}
+
+		} catch(err) {
+			return res404(res, String(err));
+		}
+	} else {
+		return res404(res, "no user or no project found");
+	}
+}
+
+
 export {
 	createNewWallet,
 
 	checkAccountBalances,
 
 	basicTxn,
+	receiveDonation,
 
 	getIndexData
 }

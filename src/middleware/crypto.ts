@@ -439,26 +439,6 @@ export class CryptoClient {
 
 
 	/**
-	 * Runs a python program as a child process of the server, returns its stdout or null;
-	 * @param path 
-	 * @param callback 
-	 */
-	/*
-	public static runPyTEAL : any = async (path: string) => {
-		const exec = util.promisify(require("child_process").exec);
-
-		await exec(`python3 ${path}`, (error: Error, stdout: Buffer, stderr: string | Buffer) => {
-			if(error || stderr) {
-				console.error(error, stderr);
-				return null;
-			}
-
-			return new Uint8Array(stdout);
-		});
-	}*/
-
-
-	/**
 	 * Creates an 8 byte buffer to hold a smart contract argument.
 	 * @param input 
 	 * @returns 
@@ -482,8 +462,8 @@ export class CryptoClient {
 		let args: any = [
 			new Uint8Array(Buffer.from(creator)),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(goalAmt))),
-			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(new Date().getTime()))),
-			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(endTime.getTime() / 1000))),
+			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(Math.floor(new Date().getTime())))),
+			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(Math.floor(endTime.getTime() / 1000)))),
 			new Uint8Array(CryptoClient.makeUInt8Buffer(BigInt(closeOnFunded ? 1 : 0)))
 		]
 		return args;
@@ -626,9 +606,9 @@ export class CryptoClient {
 		let sKey = await KeyDaemonClient.getAccountKey(walletID, password, sender);
 		
 		let deleteApp = algosdk.makeApplicationDeleteTxn(sender, txnParams, appIndex);
-		let finalTxn = await CryptoClient.client.sendRawTransaction(deleteApp.signTxn(sKey)).do();
+		await CryptoClient.client.sendRawTransaction(deleteApp.signTxn(sKey)).do();
 
-		return finalTxn.txId;
+		return deleteApp.txID();
 	}
 }
 
