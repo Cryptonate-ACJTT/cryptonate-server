@@ -104,6 +104,7 @@ async function addUser(req: Request, res: Response) {
 			.json({
 				status: "OK",
 				user: {
+                    id: user.id,
 					username: user.username,
 					email: user.email,
 					role: user.role,
