@@ -51,7 +51,7 @@ def approval_program():
 	creation = Seq(
 
 		# save creation arguments to global variables
-		App.globalPut(organizer_key, Txn.application_args[0]),
+		App.globalPut(organizer_key, Txn.sender()),
 		App.globalPut(goal_amount_key, goal_amount),
 		App.globalPut(creation_time_key, creation_time),
 		App.globalPut(destruction_time_key, destruction_time),

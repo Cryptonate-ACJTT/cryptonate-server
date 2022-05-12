@@ -8,7 +8,7 @@ import {CryptoClient, KeyDaemonClient, MIN_FUNDING} from "../middleware/crypto";
 import {organizationModel} from "../models/OrganizationModel";
 import ROLE from "../models/Role";
 import User from "../models/interface/User";
-import { checkKeyExists, getUserFromRole, res200, res404 } from "./Commons";
+import { checkKeyExists, checkModelEntryExists, getUserFromRole, MODEL_SEARCH_MODES, res200, res404, saveModel } from "./Commons";
 
 /**
  * Contains everything related to Explore page and Project page
@@ -126,7 +126,7 @@ async function createProject(req: Request, res: Response) {
 					goalAmount,
 					appID: contract.appIndex,
 					address: contract.appAddr,
-					creatorID: userInfo.id
+					creatorID: user._id
 				});
 
 				await newProject.save();
@@ -302,24 +302,30 @@ async function getProjectsBySearch(req: Request, res: Response) {
  */
 async function deleteProject(req: Request, res: Response) {
 	let user: User | null;
+	let project: Project | null;
 
-	let {userInfo, sender, appID} = req.body;
+	let {userInfo, appID} = req.body;
+
+	if(!checkKeyExists({userInfo, appID})) {
+		return res404(res, "Parameter missing!");
+	}
 
 	let email = userInfo.email;
 	let role = userInfo.role;
 
-	if(checkKeyExists({userInfo, sender, appID})) {
-		return res404(res, "Parameter missing!");
-	}
-
 	user = await getUserFromRole(role, {email});
+	project = await checkModelEntryExists(projectModel, {appID}, MODEL_SEARCH_MODES.FIND_ONE);
 
-	if(user) {
+	if(user && project) {
 		try {
-			let attempt = await CryptoClient.deleteProject(user.wallet.id, user.password, sender, appID);
+			let attempt = await CryptoClient.deleteProject(user.wallet.id, user.password, user.wallet.accounts[0], appID);
 			let confirm = await CryptoClient.confirmTransaction(attempt);
 			if(confirm) {
-				return res200(res, "App delete successful", {});
+				project.projectOpen = false;
+				let saved = await saveModel(project);
+				if(saved) {
+					return res200(res, "App delete successful", {});
+				}
 			}
 		} catch(err) {
 			console.error(err);
@@ -336,4 +342,5 @@ export {
     getFrontPageStats,
     getAllProjects,
     getProjectsBySearch,
+	deleteProject
 };

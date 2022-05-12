@@ -152,7 +152,7 @@ app_global_get
 b main_l18
 main_l25:
 byte "organizer"
-txna ApplicationArgs 0
+txn Sender
 app_global_put
 byte "goal"
 txna ApplicationArgs 1

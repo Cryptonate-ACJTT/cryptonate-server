@@ -11,6 +11,7 @@ router.post("/create", verify, upload.single("image"), ProjectController.createP
 router.get("/frontpage", ProjectController.getFrontPageStats);
 router.get("/explore", ProjectController.getAllProjects);
 router.get("/explore/search", ProjectController.getProjectsBySearch);
+router.post("/delete", verify, ProjectController.deleteProject);
 
 export { router as ProjectRouter };
 
