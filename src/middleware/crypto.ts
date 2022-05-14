@@ -13,7 +13,7 @@ import { donorModel } from "../models/DonorModel";
 /**
  * Algo server; specifically set up for 'sudo ./sandbox up dev'
  */
-const SERVER = "http://localhost";
+const SERVER = "http://cryptonate.eastus.cloudapp.azure.com";
 
 /**
  * Ports used by Algorand services
