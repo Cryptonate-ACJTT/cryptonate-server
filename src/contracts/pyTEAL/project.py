@@ -30,8 +30,6 @@ def approval_program():
 		).Else( Reject() )
 
 	
-	
-
 
 	### PROJECT CREATION ###
 	
@@ -63,19 +61,9 @@ def approval_program():
 		App.globalPut(closes_after_funds_met_key, closes_after_funds_met),
 		App.globalPut(project_open_key, Int(1)),
 
-		# check if logic is sound
-		#Assert(
-		#	And(
-		#		Global.latest_timestamp() <= creation_time,
-		#		If(App.globalGet(destruction_time_enabled_key))
-		#			.Then(creation_time < destruction_time)
-		#			.Else(Int(1))
-		#	)
-		#),
-
-		# creation success
 		Approve()
 	)
+
 
 
 	### PROJECT CONTRACT INTERACTIONS ###

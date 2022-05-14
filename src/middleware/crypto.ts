@@ -1,9 +1,6 @@
-import algosdk, { LogicSigAccount, Transaction } from "algosdk";
-import { readFileSync, writeFileSync } from "fs";
-import path, { resolve } from "path";
-import util from "util"
-import { checkModelEntryExists, MODEL_SEARCH_MODES } from "../controller/Commons";
-import { donorModel } from "../models/DonorModel";
+import algosdk  from "algosdk";
+import { readFileSync } from "fs";
+import path from "path";
 
 /**
  * Contains all the interactions we need with algorand stuff
@@ -325,7 +322,6 @@ export class CryptoClient {
 	public static confirmTransaction = async (txID: string) => {
 		let confirmed = await algosdk.waitForConfirmation(CryptoClient.client, txID, DEFAULT_TIMEOUT);
 
-		//console.log(confirmed);
 		if(confirmed["confirmed-round"] > 0) {
 			return confirmed;
 		}
@@ -563,7 +559,6 @@ export class CryptoClient {
 	public static donateToProject = async (walletID: string, password: string, sender: string, appAddr: string, appIndex: number, amount: number) => {
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
 
-		console.log(appAddr, appIndex);
 
 		let donateTxn = algosdk.makePaymentTxnWithSuggestedParams(sender, appAddr, CryptoClient.convertToMicros(amount), undefined, new TextEncoder().encode(`donate to ${appAddr}`), txnParams);
 		let contractTxn = algosdk.makeApplicationNoOpTxn(sender, txnParams, appIndex, [new Uint8Array(Buffer.from("donation"))]);
@@ -579,14 +574,6 @@ export class CryptoClient {
 		let signed = [signedDonateTxn, signedContractTxn]
 
 		let finalTxn = await CryptoClient.client.sendRawTransaction(signed).do();
-		
-
-		//let drr = await algosdk.createDryrun({client: CryptoClient.client, txns: [algosdk.decodeSignedTransaction(signed[0]), algosdk.decodeSignedTransaction(signed[1])]});
-		//const filename = 'dryrun.msgp'
-		//writeFileSync(filename, algosdk.encodeObj(drr.get_obj_for_encoding(true)))
-
-		//console.log(await CryptoClient.client.pendingTransactionInformation(finalTxn.txId).do());
-		//console.log(await CryptoClient.confirmTransaction(finalTxn.txID));
 
 		return {dtxID: donateTxn.txID(), ctxID: contractTxn.txID(), ftxID: finalTxn.txId};
 	}
@@ -611,23 +598,6 @@ export class CryptoClient {
 		return deleteApp.txID();
 	}
 }
-
-// FOR TESTING, PLEASE REMOVE
-/*
-(async () => {
-	let user = await checkModelEntryExists(donorModel, {username:"user"}, MODEL_SEARCH_MODES.FIND_ONE);
-	//console.log(user.wallet.accounts[0])
-	//
-	try {
-		//console.log(await CryptoClient.donateToProject(user.wallet.id, user.password, user.wallet.accounts[0], 'CYMJGFROP52IJ67R5QKZBCGQH4JDDLKVBGS4537O4SNOSP2K7QX3I4EEDA', 78, 0.1));
-		//console.log(await CryptoClient.makeProjectContract(user.wallet.id, user.password, user.wallet.accounts[0], 1, new Date(2022, 5, 10, 20, 20, 20), true, true));
-	
-		//console.log(await CryptoClient.getBalance('CYMJGFROP52IJ67R5QKZBCGQH4JDDLKVBGS4537O4SNOSP2K7QX3I4EEDA'));
-	} catch(err) {
-		console.log(err);
-	}
-})();
-*/
 
 
 /************************************
@@ -668,6 +638,7 @@ export class IndexClient {
 
 	public static getAccByID = async (address: string, date: Date) => {
 		let info = await IndexClient.client.searchForTransactions().address(address).beforeTime(date.toISOString()).do()
-		//console.log(info);
+
+		return info;
 	}
 }

@@ -77,7 +77,6 @@ export const checkKeyExists = (toCheck: object) => {
 	let keys = Object.keys(checkObj);
 
 	keys.forEach((key) => {
-		console.log(key, checkObj[key]);
 		if(!checkObj[key]) {
 			return false;
 		}

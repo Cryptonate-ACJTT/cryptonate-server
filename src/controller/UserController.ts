@@ -9,7 +9,7 @@ import {adminModel} from "../models/AdminModel";
 import {AuthForm, authFormModel} from "../models/AuthFormModel";
 import {CryptoClient, KeyDaemonClient} from "../middleware/crypto";
 import fetch from "node-fetch";
-import { checkKeyExists, getUserFromRole, res404 } from "./Commons";
+import { checkKeyExists, res404 } from "./Commons";
 
 
 /**
