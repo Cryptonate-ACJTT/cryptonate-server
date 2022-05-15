@@ -10,7 +10,7 @@ import path from "path";
 /**
  * Algo server; specifically set up for 'sudo ./sandbox up dev'
  */
-const SERVER = "http://cryptonate.eastus.cloudapp.azure.com";
+const SERVER = "http://localhost";
 
 /**
  * Ports used by Algorand services
