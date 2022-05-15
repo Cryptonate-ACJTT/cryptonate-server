@@ -118,6 +118,7 @@ async function addUser(req: Request, res: Response) {
 			});
 
 	} catch (err: any) {
+		console.log(err);
 		return res.status(404).json(err.toString())
 	}
 

@@ -10,7 +10,7 @@ import path from "path";
 /**
  * Algo server; specifically set up for 'sudo ./sandbox up dev'
  */
-const SERVER = "http://localhost";
+const SERVER = "http://cryptonate.eastus.cloudapp.azure.com";
 
 /**
  * Ports used by Algorand services
@@ -37,7 +37,8 @@ const TOKENS = {
 /**
  * TESTING ONLY: devnet prefunded account mnemonics for funding test accounts
  */
-const PREFUNDED_MNEMONIC = "shuffle talent arena evil upset wish economy funny hair rocket dirt friend desert recall before letter useless rule garment tower all blur goat abstract fruit"
+const PREFUNDED_MNEMONIC = "advance employ maid zero stereo broom involve vocal symptom plunge sketch law eternal axis filter tip forum voyage expect scheme deny stand stock ability slam"
+
 
 /**
  * Rounds to wait for algodv2 to timeout	
@@ -354,7 +355,7 @@ export class CryptoClient {
 	 * @returns 
 	 */
 	public static fundNewAccountForTesting = async (receiver: string) => {
-		let masterAcc = "MGTGN4OD5PFCOSDAQK5OP6S2PKOU2K6L3CVDYZNPCSIP2BBSQ46TX2HUEE";
+		let masterAcc = "COGYXAZYOQWVZ7GVUUYETDZWB5Z67LGLMFFHKUDQPQPFJ3EIG6PCP6YHC4";
 		let txnParams = await CryptoClient.client.getTransactionParams().do();
 		let testAmt = 10;
 		let note = "test funding";
