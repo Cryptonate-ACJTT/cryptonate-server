@@ -137,7 +137,7 @@ async function addUser(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
     let user: User | null;
     const {email, password} = req.body;
-
+    console.log("ERRRROR LOGIN")
 	if(!checkKeyExists({email, password})) {
 		return res404(res, "Missing parameter for login!")
 	}
@@ -368,11 +368,24 @@ async function submitOrgAuthenticationForm(req: Request, res: Response) {
  * @param res
  * orgId -> username for organization (can't be updated)
  */
-async function editOrgAuthenticationForm(req: Request, res: Response) {
-    const {orgId, name, EIN, category, email, phone, location, website} =
+ async function editOrgAuthenticationForm(req: Request, res: Response) {
+    const { orgId, name, EIN, category, email, phone, location, website } =
         req.body;
+        console.log(EIN)
 
-    console.log(req.body)
+    if (
+        !name ||
+        !EIN ||
+        !category ||
+        !email ||
+        !phone ||
+        !location ||
+        !website
+    ) {
+        return res
+            .status(404)
+            .json({ status: "ERROR", msg: `Field missing from the form` });
+    }
 
     if (!orgId)
         return res
@@ -383,21 +396,39 @@ async function editOrgAuthenticationForm(req: Request, res: Response) {
             });
 
     // const orgForm: Array<AuthForm> = await authFormModel.find({orgId});
-    const orgForm: AuthForm | null = await authFormModel.findOne({orgId});
+    const orgForm: AuthForm | null = await authFormModel.findOne({ orgId });
     if (!orgForm)
         return res
             .status(500)
-            .json({status: "ERROR", msg: `Organization not found`});
+            .json({ status: "ERROR", msg: `Organization not found` });
 
-    if (name) orgForm.name = name;
-    if (EIN) orgForm.EIN = EIN;
-    if (category) orgForm.category = category;
-    if (email) orgForm.email = email;
-    if (phone) orgForm.phone = phone;
-    if (location) orgForm.location = location;
-    if (website) orgForm.website = website;
+    try {
+        const apiRes = await fetch(process.env.API_URL + EIN + ".json")
+        const apiResJson = await apiRes.json();
+        if (apiResJson.organization) {
+            if (name) orgForm.name = name;
+            if (EIN) orgForm.EIN = EIN;
+            if (category) orgForm.category = category;
+            if (email) orgForm.email = email;
+            if (phone) orgForm.phone = phone;
+            if (location) orgForm.location = location;
+            if (website) orgForm.website = website;
 
-    await orgForm.save();
+            await orgForm.save();
+        }
+        else {
+            return res
+                .status(404)
+                .json({
+                    status: "ERROR",
+                    msg: `Provided EIN's 501(c)(3) status is not approved by IRS.`,
+                });
+        }
+    } catch (err) {
+        console.log(err);
+        return res.status(500)
+            .json({ status: "ERROR", msg: `Something wrong while making external API CALL!` });
+    }
 
     return res.status(200).json({
         status: "OK",
@@ -405,6 +436,7 @@ async function editOrgAuthenticationForm(req: Request, res: Response) {
         form: orgForm,
     });
 }
+
 
 /**
  * Get organization authentication form
@@ -426,7 +458,7 @@ async function getOrgAuthenticationForm(req: Request, res: Response) {
     if (!orgForm)
         return res
             .status(500)
-            .json({status: "ERROR", msg: `Organization not found`});
+            .json({status: "ERROR", msg: `Organization's auth form is not found`});
 
     return res.status(200).json({
         status: "OK",
