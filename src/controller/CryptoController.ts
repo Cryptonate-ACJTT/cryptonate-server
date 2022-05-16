@@ -192,6 +192,10 @@ const receiveDonation = async (req: Request, res: Response) => {
 		return res404(res, "Missing request parameter(s)");
 	}
 
+	if(parseFloat(amount) === NaN) {
+		return res404(res, "please use a number");
+	}
+
 	user = await getUserFromRole(role, {email});
 	project = await checkModelEntryExists(projectModel, {address: projectAddress}, MODEL_SEARCH_MODES.FIND_ONE);
 
