@@ -137,8 +137,8 @@ async function addUser(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
     let user: User | null;
     const {email, password} = req.body;
-    console.log("ERRRROR LOGIN")
-	if(!checkKeyExists({email, password})) {
+
+    if(!checkKeyExists({email, password})) {
 		return res404(res, "Missing parameter for login!")
 	}
 
