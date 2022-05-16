@@ -205,7 +205,7 @@ const receiveDonation = async (req: Request, res: Response) => {
 			}
 
 			if(confirmations.dtx && confirmations.ctx) {
-				project.totalSaved = project.totalSaved + amount;
+				project.totalSaved = project.totalSaved + parseFloat(amount);
 
 				if(project.totalSaved >= project.goalAmount) {
 					let delet = await CryptoClient.deleteProject(wallet, user.password, sender, projectID);
@@ -218,7 +218,11 @@ const receiveDonation = async (req: Request, res: Response) => {
 
 				let saved = await saveModel(project);
 
-				if(saved) {
+				user.projects.push(project);
+
+				let saved2 = await saveUser(user);
+
+				if(saved && saved2) {
 					return res200(res, "Donation submitted successfully!", {txIDs, confirmations});
 				}
 			}
