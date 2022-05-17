@@ -1,5 +1,7 @@
 # Cryptonate Server [v1]
 
+## For more detailed information, check our [design document](https://docs.google.com/document/d/1JanIrYKi1qnsd35ako7Bb2Ma6F0VMNa1e1zj3OhG4Z8/)!
+
 ## Table of Contents
 
 0. [Requirements](#requirements)
