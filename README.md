@@ -70,6 +70,8 @@ cd sandbox
 - contracts
   - Pyteal (smart contract)
   - TEAL (compiled smart contract)
+- db
+	- mongodb config
 - models
   - mongoose models
 - middleware
