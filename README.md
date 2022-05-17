@@ -9,7 +9,7 @@
 
 ## Requirements
 
-1. Need docker installed
+1. Need docker and docker-compose installed -> you can follow these steps https://docs.docker.com/engine/install/ubuntu/ - and also apt install docker-compose
 2. Run Sandbox locally by following instruction on the github link -> [github repo](https://github.com/algorand/sandbox)
 3. Disable/stop the locally installed MongoDB (If you have one)
 
@@ -29,6 +29,20 @@ docker-compose -f docker-compose-mongo.yml up -d
 npm start     # 1. running app without nodemon
 ```
 
+_Note 2_ - In order to get the Algorand/cryptocurrency portions of this app to work, you must have the Algorand Sandbox running.
+
+```bash
+
+# clone the sandbox from GitHub
+git clone https://github.com/algorand/sandbox.git
+
+# open the sandbox folder
+cd sandbox
+
+# run the sandbox executable to start a private network, in dev mode
+./sandbox up dev
+```
+
 ## Technologies
 
 - NPM
@@ -40,6 +54,9 @@ npm start     # 1. running app without nodemon
 - DOCKER
   - Running Cryptonate app and mongodb all thorugh the container
 - eslint - (npm init @eslint/config)
+- ALGORAND SANDBOX
+- PYTEAL / TEAL
+
 
 ## Folder Structure
 
@@ -49,11 +66,12 @@ npm start     # 1. running app without nodemon
 - controller
   - (controller / service) contains main logic for each routes
 - contracts
-  - Pyteal (Smart contract)
-- db
+  - Pyteal (smart contract)
+  - TEAL (compiled smart contract)
+- models
   - mongoose models
 - middleware
-  - auth middlewares
+  - auth middlewares, crypto middleware
 - routes
   - userRoute, organizationRoute, etc
 - test
@@ -62,5 +80,4 @@ npm start     # 1. running app without nodemon
   - env.ts (Temporarly using it as .env file)
   - server.ts (refactored app.ts for testing)
 - app.ts
-
   - starting point
